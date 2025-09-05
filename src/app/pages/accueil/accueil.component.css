@@ -1,0 +1,123 @@
+.esprit-accueil {
+  margin-left: 240px;
+  margin-top: 60px;
+  padding: 2rem;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #ffffff 0%, #f7f7f7 40%, #ffeaea 100%);
+  min-height: calc(100vh - 60px);
+}
+
+/* HERO */
+.esprit-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  box-shadow: 0 8px 20px rgba(215, 25, 32, 0.1);
+}
+
+.hero-left h1 {
+  font-size: 2.5rem;
+  color: #111;
+  margin-bottom: 1rem;
+}
+
+.hero-left h1 span {
+  color: #d71920;
+}
+
+.slogan {
+  font-size: 1.2rem;
+  color: #555;
+  margin-bottom: 2rem;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-primary,
+.btn-outline {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.btn-primary {
+  background: #d71920;
+  color: white;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: #b9151b;
+}
+
+.btn-outline {
+  background: transparent;
+  color: #d71920;
+  border: 2px solid #d71920;
+}
+
+.btn-outline:hover {
+  background: #d71920;
+  color: white;
+}
+
+.hero-right img {
+  max-width: 100%;
+  border-radius: 16px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* VALUES */
+.esprit-values {
+  margin-top: 4rem;
+  text-align: center;
+}
+
+.esprit-values h2 {
+  color: #d71920;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+}
+
+.value-cards {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.value-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(215, 25, 32, 0.05);
+  flex: 1;
+  min-width: 250px;
+  max-width: 300px;
+}
+
+.value-card i {
+  font-size: 2rem;
+  color: #d71920;
+  margin-bottom: 1rem;
+}
+
+.value-card h3 {
+  margin-bottom: 0.5rem;
+  color: #222;
+}
+
+.value-card p {
+  font-size: 0.95rem;
+  color: #555;
+}

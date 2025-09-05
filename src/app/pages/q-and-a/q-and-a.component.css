@@ -1,0 +1,164 @@
+/* Conteneur principal avec un joli dégradé de fond */
+.chat-container {
+  max-width: 700px;
+  margin: 3rem auto;
+  padding: 2rem;
+  background: linear-gradient(135deg, #d71920 0%, #f9f9f9 100%);
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(215, 25, 32, 0.3);
+  color: #222;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Titre */
+.chat-container h2 {
+  text-align: center;
+  margin-bottom: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.4);
+  font-size: 1.6rem;
+}
+
+/* Boîte de chat */
+.chat-box {
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  height: 400px;
+}
+
+/* Zone des messages avec scroll */
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+  margin-bottom: 1.2rem;
+  scrollbar-width: thin;
+  scrollbar-color: #d71920 #f0f0f0;
+}
+
+/* Scrollbar pour Chrome, Edge */
+.messages::-webkit-scrollbar {
+  width: 8px;
+}
+.messages::-webkit-scrollbar-thumb {
+  background-color: #d71920;
+  border-radius: 4px;
+}
+.messages::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+/* Message utilisateur */
+.messages .user {
+  text-align: right;
+  color: #d71920;
+  margin-bottom: 0.6rem;
+  font-weight: 600;
+  background: rgba(215, 25, 32, 0.1);
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 20px 20px 0 20px;
+  max-width: 70%;
+  word-wrap: break-word;
+}
+
+/* Message bot */
+.messages .bot {
+  text-align: left;
+  color: #444;
+  margin-bottom: 0.6rem;
+  font-weight: 500;
+  background: #f5f5f5;
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 20px 20px 20px 0;
+  max-width: 70%;
+  word-wrap: break-word;
+}
+
+/* Zone d'entrée + bouton */
+.input-area {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.input-area input[type="text"] {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #d71920;
+  border-radius: 30px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+  outline: none;
+}
+
+.input-area input[type="text"]:focus {
+  border-color: #b9151b;
+  box-shadow: 0 0 5px rgba(215, 25, 32, 0.5);
+}
+
+/* Bouton envoyer */
+.input-area button {
+  background-color: #d71920;
+  border: none;
+  border-radius: 30px;
+  padding: 12px 25px;
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  box-shadow: 0 4px 12px rgba(215, 25, 32, 0.4);
+}
+
+.input-area button:hover {
+  background-color: #b9151b;
+  box-shadow: 0 6px 18px rgba(185, 21, 27, 0.6);
+}
+/* Indicateur de saisie en cours (typing) */
+.typing-indicator {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 20px 20px 20px 0;
+  background: #f5f5f5;
+  color: #444;
+  max-width: 70%;
+  font-weight: 500;
+}
+
+.typing-indicator span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: #d71920;
+  border-radius: 50%;
+  animation: blink 1.4s infinite ease-in-out both;
+}
+
+.typing-indicator span:nth-child(1) {
+  animation-delay: 0s;
+}
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes blink {
+  0%, 80%, 100% {
+    opacity: 0.3;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+

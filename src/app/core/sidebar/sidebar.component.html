@@ -1,0 +1,33 @@
+<nav class="sidebar">
+  <div class="logo">
+    <img src="assets/images/images.png" alt="Logo ESPRIT" />
+    </div>
+  <ul class="menu">
+    <li routerLink="/dashboard" routerLinkActive="active">
+      <i class="fa-solid fa-chart-line"></i><span>Dashboard</span>
+    </li>
+    <li routerLink="/profile" routerLinkActive="active">
+      <i class="fa-solid fa-user"></i><span>Profil</span>
+    </li>
+    <li routerLink="/offres-emploi" routerLinkActive="active">
+      <i class="fa-solid fa-briefcase"></i><span>Emploi</span>
+    </li>
+    <li routerLink="/stages" routerLinkActive="active">
+      <i class="fa-solid fa-user-graduate"></i><span>Stage</span>
+    </li>
+    <li routerLink="/formation" routerLinkActive="active">
+      <i class="fa-solid fa-chalkboard-teacher"></i><span>Formation</span>
+    </li>
+    <li routerLink="/orientation" routerLinkActive="active">
+      <i class="fa-solid fa-compass"></i><span>Orientation</span>
+    </li>
+  </ul>
+  <div class="sidebar-footer">
+    <button (click)="toggleDark()">
+      <i class="fa-solid" [ngClass]="dark ? 'fa-sun' : 'fa-moon'"></i>
+    </button>
+      <button class="btn-logout" aria-label="Se déconnecter">
+      <i class="fa-solid fa-right-from-bracket"></i> Se déconnecter
+    </button>
+  </div>
+</nav>

@@ -1,0 +1,70 @@
+<body [class.dark-mode]="isDarkMode">
+  <button (click)="toggleDarkMode()" style="position: fixed; top: 20px; right: 20px; z-index: 999;">
+    {{ isDarkMode ? 'Light Mode' : 'Dark Mode' }}
+  </button>
+  
+    <div class="slogan-container">
+      <img src="assets/images/images.png" alt="Logo Micro Insurance" class="logo">
+  
+    <h1></h1>
+    <p></p>
+  </div>
+      <div class="container">
+          <div class="login-box">
+              <h2>Login</h2>
+              <form action="#">
+                  <div class="input-box">
+                      <input type="email"   name="EmailId" [(ngModel)]="loginObj.EmailId"  required="">
+                      <label>Email</label>
+                  </div>
+                  <div class="input-box" style="position: relative;">
+                    <input
+                      [type]="passwordVisible ? 'text' : 'password'"
+                      id="password"
+                      name="Password"
+                      [(ngModel)]="loginObj.Password"
+                      required
+                    >
+                    <label>Password</label>
+                    
+                    <img 
+                      id="eye-icon"
+                      [src]="passwordVisible ? 'https://static.vecteezy.com/ti/vecteur-libre/t2/4606664-icon-visibility-off-glyph-style-simple-illustration-editable-stroke-gratuit-vectoriel.jpg' : 'https://cdn-icons-png.flaticon.com/512/709/709612.png'"
+                      alt="Afficher mot de passe"
+                      (click)="togglePassword()"
+                      style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; cursor: pointer;"
+                    />
+                  </div>
+                  
+                    
+                    <div class="forgot-pass">
+                      <a [routerLink]="'/forgot-password'">Forgot your password?</a>
+                    </div>
+                    
+                  
+                  <button type="button" class="btn" (click)="onLogin()" >Login</button>
+                  <div class="google-login">
+                      <button type="button" class="btn google-btn">
+                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google logo">
+                        Sign in with Google
+                      </button>
+                      <div class="qr-login">
+                        <button type="button" class="btn qr-btn" [routerLink]="['/qr-login']">
+                          <img src="https://www.gstatic.com/images/icons/material/system/2x/qr_code_googblue_48dp.png" alt="QR Code" style="width: 20px; height: 20px; margin-right: 8px;">
+                          Login with QR Code
+                        </button>
+                      </div>
+                      
+                    </div>
+                    <div class="signup-link">
+                      <p>No account yet ? <a routerLink="/signup">Singup</a></p>
+                    </div>
+              </form>
+          </div>
+          
+      </div>
+     
+        
+        
+  </body>
+  
