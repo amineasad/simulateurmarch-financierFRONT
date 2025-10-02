@@ -1,42 +1,41 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http'; // ✅ Import ajouté
+import { HttpClientModule } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { LoginComponent } from './login/login.component';
-import { AccueilComponent } from './pages/accueil/accueil.component';
-import { CoreModule } from './core/core.module';
-import { QAndAComponent } from './pages/q-and-a/q-and-a.component';
-import { OffresEmploiComponent } from './pages/offres-emploi/offres-emploi.component';
-import { StagesComponent } from './pages/stages/stages.component';
-import { FormationComponent } from './pages/formation/formation.component';
-import { OrientationComponent } from './pages/orientation/orientation.component';
-import { SignupComponent } from './pages/signup/signup.component';
+import { TradingRoomComponent } from './components/trading-room/trading-room.component';
+import { PriceChartComponent } from './components/price-chart/price-chart.component';
+import { GameLobbyComponent } from './components/game-lobby/game-lobby.component';
+import { GameRoomComponent } from './components/game-room/game-room.component'; // ← Ajout
+
+// Services
+import { WebsocketService } from './services/websocket.service';
+import { TradingService } from './services/trading.service';
+import { GameService } from './services/game.service';
 
 @NgModule({
   declarations: [
     AppComponent,
-    LoginComponent,
-    AccueilComponent,
-    QAndAComponent,
-    OffresEmploiComponent,
-    StagesComponent,
-    FormationComponent,
-    OrientationComponent,
-    SignupComponent
+    TradingRoomComponent,
+    PriceChartComponent,
+    GameLobbyComponent,
+    GameRoomComponent // ← Ajout
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
+    HttpClientModule,
     FormsModule,
-    ReactiveFormsModule,
-    HttpClientModule, // ✅ Nécessaire pour HttpClient
-    CoreModule ,
-    HttpClientModule
+    CommonModule
   ],
-  providers: [],
+  providers: [
+    WebsocketService,
+    TradingService,
+    GameService
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

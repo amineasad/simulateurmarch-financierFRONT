@@ -1,0 +1,165 @@
+<!-- src/app/components/game-room/game-room.component.html -->
+
+<div class="game-room-container">
+  
+  <!-- Top Bar avec Timer et Actions -->
+  <div class="game-top-bar">
+    <div class="top-bar-left">
+      <button class="btn-back" (click)="leaveRoom()">
+        ← Quitter
+      </button>
+      <div class="room-info">
+        <span class="room-name">Salle de Trading - Session en cours</span>
+      </div>
+    </div>
+    
+    <div class="top-bar-center">
+      <div class="timer-display" [style.color]="getTimerColor()">
+        <span class="timer-icon">⏱️</span>
+        <span class="timer-value">{{ timeFormatted }}</span>
+        <span class="timer-label" *ngIf="timerWarning">Temps restant</span>
+      </div>
+    </div>
+    
+    <div class="top-bar-right">
+      <div class="rank-badge">
+        <span class="rank-label">Votre rang:</span>
+        <span class="rank-value">{{ getRankMedal(currentUserRank) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="game-main-content">
+    
+    <!-- Left Side: Trading Interface (réutilise le component existant) -->
+    <div class="game-trading-section">
+      <app-trading-room></app-trading-room>
+    </div>
+
+    <!-- Right Side: Game Panels -->
+    <div class="game-panels">
+      
+      <!-- Event Alert (Pop-up temporaire) -->
+      <div class="event-alert" *ngIf="currentEvent" [style.border-color]="getEventColor(currentEvent.impact)">
+        <div class="event-alert-header">
+          <span class="event-icon">{{ getEventIcon(currentEvent.type) }}</span>
+          <span class="event-title">{{ currentEvent.title }}</span>
+          <span class="event-impact" [style.color]="getEventColor(currentEvent.impact)">
+            {{ currentEvent.impact > 0 ? '+' : '' }}{{ currentEvent.impact }}%
+          </span>
+        </div>
+        <p class="event-description">{{ currentEvent.description }}</p>
+      </div>
+
+      <!-- Leaderboard Panel -->
+      <div class="panel leaderboard-panel" [class.collapsed]="!showLeaderboard">
+        <div class="panel-header" (click)="toggleLeaderboard()">
+          <h3>🏆 Classement en Direct</h3>
+          <span class="toggle-icon">{{ showLeaderboard ? '▼' : '▶' }}</span>
+        </div>
+        
+        <div class="panel-content" *ngIf="showLeaderboard">
+          <div class="leaderboard-list">
+            <div 
+              *ngFor="let player of leaderboard" 
+              class="leaderboard-item"
+              [class.current-user]="player.username === 'VOUS'"
+              [class.top-3]="player.rank <= 3">
+              
+              <div class="player-rank">
+                <span class="rank-medal">{{ getRankMedal(player.rank) }}</span>
+              </div>
+              
+              <div class="player-info">
+                <div class="player-name">
+                  {{ player.username }}
+                  <span class="online-dot" *ngIf="player.isOnline"></span>
+                </div>
+                <div class="player-value">
+                  {{ player.portfolioValue | number:'1.0-0' }}€
+                </div>
+              </div>
+              
+              <div class="player-pnl" [class.positive]="player.pnl >= 0" [class.negative]="player.pnl < 0">
+                <span class="pnl-value">{{ player.pnl >= 0 ? '+' : '' }}{{ player.pnl | number:'1.0-0' }}€</span>
+                <span class="pnl-percent">({{ player.pnlPercent >= 0 ? '+' : '' }}{{ player.pnlPercent | number:'1.2-2' }}%)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Events History Panel -->
+      <div class="panel events-panel" [class.collapsed]="!showEventPanel">
+        <div class="panel-header" (click)="toggleEventPanel()">
+          <h3>📢 Événements</h3>
+          <span class="toggle-icon">{{ showEventPanel ? '▼' : '▶' }}</span>
+        </div>
+        
+        <div class="panel-content" *ngIf="showEventPanel">
+          <div class="events-list">
+            <div *ngFor="let event of eventHistory.slice(0, 5)" class="event-item">
+              <div class="event-time">
+                {{ event.timestamp | date:'HH:mm' }}
+              </div>
+              <div class="event-content">
+                <span class="event-icon-small">{{ getEventIcon(event.type) }}</span>
+                <span class="event-text">{{ event.title }}</span>
+                <span class="event-impact-small" [style.color]="getEventColor(event.impact)">
+                  {{ event.impact > 0 ? '+' : '' }}{{ event.impact }}%
+                </span>
+              </div>
+            </div>
+            
+            <div *ngIf="eventHistory.length === 0" class="no-events">
+              Aucun événement pour le moment
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Panel -->
+      <div class="panel chat-panel" [class.collapsed]="!showChat">
+        <div class="panel-header" (click)="toggleChat()">
+          <h3>💬 Chat</h3>
+          <span class="toggle-icon">{{ showChat ? '▼' : '▶' }}</span>
+        </div>
+        
+        <div class="panel-content chat-content" *ngIf="showChat">
+          <div class="chat-messages">
+            <div 
+              *ngFor="let message of chatMessages" 
+              class="chat-message"
+              [class.system-message]="message.type === 'SYSTEM'"
+              [class.bot-message]="message.type === 'BOT'"
+              [class.user-message]="message.type === 'USER'">
+              
+              <div class="message-header">
+                <span class="message-username" [class.current-user]="message.username === username">
+                  {{ message.username }}
+                </span>
+                <span class="message-time">{{ message.timestamp | date:'HH:mm' }}</span>
+              </div>
+              <div class="message-text">{{ message.message }}</div>
+            </div>
+          </div>
+          
+          <div class="chat-input-container">
+            <input 
+              type="text" 
+              [(ngModel)]="chatInput"
+              (keyup.enter)="sendChatMessage()"
+              placeholder="Envoyer un message..."
+              class="chat-input"
+              maxlength="200">
+            <button class="btn-send" (click)="sendChatMessage()" [disabled]="!chatInput.trim()">
+              📤
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

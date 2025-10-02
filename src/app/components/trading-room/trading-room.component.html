@@ -1,0 +1,316 @@
+<!-- src/app/components/trading-room/trading-room.component.html -->
+
+<div class="trading-room">
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <div class="logo">TRADIX</div>
+      <button class="btn-back" (click)="goToLobby()">
+  ← à la salle de jeu
+</button>
+      <div class="time-info">
+        <span class="icon">🕐</span>
+        <span class="time">{{ currentTime | date:'HH:mm:ss' }}</span>
+        <span class="separator">|</span>
+        <span class="market-status" [class.open]="isConnected">
+          {{ isConnected ? 'MARCHÉ OUVERT' : 'MARCHÉ FERMÉ' }}
+        </span>
+      </div>
+    </div>
+    
+    <div class="top-bar-right">
+      <div class="info-item">
+        <span class="icon">👥</span>
+        <span>{{ onlineTraders }} traders en ligne</span>
+      </div>
+      <div class="info-item latency">
+        <span class="icon">📡</span>
+        <span>Latency: {{ latency }}ms</span>
+      </div>
+      <div class="info-item user">
+        <span class="label">User:</span>
+        <span class="username">{{ username }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    
+    <!-- LEFT PANEL - Watchlist -->
+    <div class="left-panel">
+      <div class="panel-header">WATCHLIST</div>
+      <div class="asset-list">
+        <div *ngFor="let asset of assets" 
+             class="asset-item"
+             [class.selected]="asset.symbol === selectedSymbol"
+             (click)="selectAsset(asset.symbol)">
+          <div class="asset-info">
+            <div class="asset-symbol">{{ asset.symbol }}</div>
+            <div class="asset-name">{{ asset.name }}</div>
+          </div>
+          <div class="asset-price">
+            <div class="price">{{ asset.price | number:'1.2-2' }}€</div>
+            <div class="change" [class.positive]="asset.change >= 0" [class.negative]="asset.change < 0">
+              <span class="icon">{{ asset.change >= 0 ? '▲' : '▼' }}</span>
+              {{ asset.change >= 0 ? '+' : '' }}{{ asset.change | number:'1.2-2' }}%
+            </div>
+          </div>
+          <div class="asset-details">
+            <span>Vol: {{ asset.volume }}</span>
+            <span class="spread">{{ asset.bid }}/{{ asset.ask }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER PANEL - Main Trading Area -->
+    <div class="center-panel">
+      
+      <!-- Asset Header -->
+      <div class="asset-header" *ngIf="selectedAsset">
+        <div class="header-left">
+          <div class="header-title">
+            <span class="symbol">{{ selectedAsset.symbol }}</span>
+            <span class="name">{{ selectedAsset.name }}</span>
+          </div>
+          <div class="header-price">
+            <span class="price">{{ selectedAsset.price | number:'1.2-2' }}€</span>
+            <span class="change" [class.positive]="selectedAsset.change >= 0" [class.negative]="selectedAsset.change < 0">
+              <span class="icon">{{ selectedAsset.change >= 0 ? '▲' : '▼' }}</span>
+              {{ selectedAsset.change >= 0 ? '+' : '' }}{{ selectedAsset.change | number:'1.2-2' }}%
+            </span>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="stat-item">
+            <div class="stat-label">BID</div>
+            <div class="stat-value bid">{{ selectedAsset.bid }}</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">ASK</div>
+            <div class="stat-value ask">{{ selectedAsset.ask }}</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">VOLUME</div>
+            <div class="stat-value">{{ selectedAsset.volume }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart Area -->
+<div class="chart-area">
+  <app-price-chart [symbol]="selectedSymbol"></app-price-chart>
+</div>
+
+      <!-- Order Book -->
+      <div class="order-book">
+        <div class="order-book-header">CARNET D'ORDRES</div>
+        <div class="order-book-content">
+          <!-- Bids -->
+          <div class="order-book-side">
+            <div class="order-book-titles">
+              <span>PRIX (BID)</span>
+              <span>QUANTITÉ</span>
+            </div>
+            <div class="order-entry bid" *ngFor="let bid of orderBook.bids">
+              <span class="price">{{ bid.price | number:'1.2-2' }}</span>
+              <span class="quantity">{{ bid.quantity }}</span>
+            </div>
+          </div>
+          <!-- Asks -->
+          <div class="order-book-side">
+            <div class="order-book-titles">
+              <span>PRIX (ASK)</span>
+              <span>QUANTITÉ</span>
+            </div>
+            <div class="order-entry ask" *ngFor="let ask of orderBook.asks">
+              <span class="price">{{ ask.price | number:'1.2-2' }}</span>
+              <span class="quantity">{{ ask.quantity }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL - Orders & Portfolio -->
+    <div class="right-panel">
+      
+      <!-- Order Form -->
+      <div class="order-form-section">
+        <div class="section-header">
+          💰 PASSER UN ORDRE
+        </div>
+        
+        <div class="order-form">
+          <!-- Buy/Sell Buttons -->
+          <div class="order-side-buttons">
+            <button 
+              class="btn-side"
+              [class.active]="orderForm.side === 'BUY'"
+              (click)="changeOrderSide('BUY')">
+              ACHETER
+            </button>
+            <button 
+              class="btn-side"
+              [class.active]="orderForm.side === 'SELL'"
+              (click)="changeOrderSide('SELL')">
+              VENDRE
+            </button>
+          </div>
+
+          <!-- Order Type -->
+          <div class="form-group">
+            <label>Type d'ordre</label>
+            <select [(ngModel)]="orderForm.type" class="form-control">
+              <option value="MARKET">Marché</option>
+              <option value="LIMIT">Limite</option>
+              <option value="STOP">Stop Loss</option>
+            </select>
+          </div>
+
+          <!-- Quantity & Price -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Quantité</label>
+              <input 
+                type="number" 
+                [(ngModel)]="orderForm.quantity"
+                min="1"
+                class="form-control">
+            </div>
+            <div class="form-group">
+              <label>Prix (€)</label>
+              <input 
+                type="number" 
+                [(ngModel)]="orderForm.price"
+                step="0.01"
+                [disabled]="orderForm.type === 'MARKET'"
+                class="form-control">
+            </div>
+          </div>
+
+          <!-- Order Total -->
+          <div class="order-total">
+            <span>Total:</span>
+            <span class="total-value">{{ getOrderTotal() | number:'1.2-2' }}€</span>
+          </div>
+
+          <!-- Submit Button -->
+          <button 
+            class="btn-submit"
+            [class.buy]="orderForm.side === 'BUY'"
+            [class.sell]="orderForm.side === 'SELL'"
+            [disabled]="!isConnected"
+            (click)="placeOrder()">
+            {{ orderForm.side === 'BUY' ? '🟢 ACHETER' : '🔴 VENDRE' }} {{ selectedSymbol }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Portfolio -->
+      <div class="portfolio-section">
+        <div class="section-header portfolio-header">
+          <span>📊 PORTEFEUILLE</span>
+          <span class="pnl" [class.positive]="totalPnL >= 0" [class.negative]="totalPnL < 0">
+            {{ totalPnL >= 0 ? '+' : '' }}{{ totalPnL | number:'1.2-2' }}€
+          </span>
+        </div>
+
+        <div class="portfolio-summary">
+          <div class="summary-item">
+            <span class="label">Valeur totale</span>
+            <span class="value">{{ totalPortfolioValue | number:'1.2-2' }}€</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Cash disponible</span>
+            <span class="value cash">{{ cash | number:'1.2-2' }}€</span>
+          </div>
+        </div>
+
+        <div class="positions-list">
+          <div class="position-item" *ngFor="let position of portfolio">
+            <div class="position-header">
+              <span class="symbol">{{ position.symbol }}</span>
+              <span class="quantity">{{ position.quantity }} actions</span>
+            </div>
+            <div class="position-details">
+              <span class="pmr">PMR: {{ position.avgPrice | number:'1.2-2' }}€</span>
+              <span class="pnl" 
+                    [class.positive]="getPositionPnL(position) >= 0"
+                    [class.negative]="getPositionPnL(position) < 0">
+                {{ getPositionPnL(position) >= 0 ? '+' : '' }}{{ getPositionPnL(position) | number:'1.2-2' }}€
+                ({{ getPositionPnLPercent(position) | number:'1.2-2' }}%)
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications & Chat -->
+      <div class="notifications-section">
+        <div class="section-header">
+          💬 NOTIFICATIONS & CHAT
+        </div>
+
+        <div class="notifications-list">
+          <!-- Notifications -->
+          <div *ngFor="let notif of notifications" 
+               class="notification-item"
+               [ngClass]="'notification-' + notif.type">
+            <div class="notification-header">
+              <span class="sender">SYSTÈME</span>
+              <span class="time">{{ notif.time }}</span>
+            </div>
+            <div class="notification-message">{{ notif.message }}</div>
+          </div>
+
+          <!-- Chat Messages -->
+          <div *ngFor="let msg of chatMessages" class="chat-message">
+            <div class="chat-header">
+              <span class="sender">{{ msg.user }}</span>
+              <span class="time">{{ msg.time }}</span>
+            </div>
+            <div class="chat-text">{{ msg.message }}</div>
+          </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="chat-input-container">
+          <input 
+            type="text" 
+            [(ngModel)]="chatInput"
+            (keyup.enter)="sendChatMessage()"
+            placeholder="Envoyer un message..."
+            class="chat-input"
+            [disabled]="!isConnected">
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- BOTTOM STATUS BAR -->
+  <div class="bottom-bar">
+    <div class="bottom-left">
+      <span class="status-item">
+        Session: <span class="value">PROD-{{ currentTime | date:'yyyy-MM-dd' }}</span>
+      </span>
+      <span class="status-item">
+        Ordres aujourd'hui: <span class="value highlight">{{ ordersToday }}</span>
+      </span>
+      <span class="status-item">
+        Volume: <span class="value">{{ volumeToday | number:'1.0-0' }}€</span>
+      </span>
+    </div>
+    <div class="bottom-right">
+      <div class="connection-status" [class.connected]="isConnected">
+        <div class="status-dot"></div>
+        <span>{{ isConnected ? 'Connecté au marché' : 'Déconnecté' }}</span>
+      </div>
+    </div>
+  </div>
+
+</div>

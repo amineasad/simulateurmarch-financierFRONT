@@ -1,0 +1,230 @@
+<!-- src/app/components/game-lobby/game-lobby.component.html -->
+
+<div class="lobby-container">
+  <!-- Header -->
+  <div class="lobby-header">
+    <div class="header-left">
+      <h1>🎮 Salles de Jeu Multi-Joueurs</h1>
+      <p class="subtitle">Rejoignez une salle ou créez la vôtre pour commencer à trader</p>
+    </div>
+    <div class="header-right">
+      <div class="user-badge">
+        <span class="user-icon">👤</span>
+        <span class="username">{{ username }}</span>
+      </div>
+      <button class="btn-create" (click)="openCreateModal()">
+        <span class="icon">➕</span>
+        Créer une Salle
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <span class="stat-value">{{ rooms.length }}</span>
+      <span class="stat-label">Salles disponibles</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">{{ getTotalPlayers() }}</span>
+      <span class="stat-label">Joueurs en ligne</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">{{ getActiveSessions() }}</span>
+      <span class="stat-label">Sessions actives</span>
+    </div>
+  </div>
+
+  <!-- Liste des salles -->
+  <div class="rooms-section">
+    <div class="rooms-grid" *ngIf="rooms.length > 0">
+      <div *ngFor="let room of rooms" class="room-card" [class.in-progress]="room.status === 'IN_PROGRESS'">
+        <!-- Room Header -->
+        <div class="room-header">
+          <div class="room-title-section">
+            <span class="status-badge" [class]="'status-' + room.status.toLowerCase()">
+              {{ getStatusIcon(room.status) }} {{ getStatusText(room.status) }}
+            </span>
+            <h3 class="room-name">{{ room.name }}</h3>
+          </div>
+          <div class="room-time">
+            <span class="time-badge">⏱️ {{ room.duration }} min</span>
+          </div>
+        </div>
+
+        <!-- Room Info -->
+        <div class="room-info">
+          <div class="info-row">
+            <div class="info-item">
+              <span class="label">Scénario</span>
+              <span class="value scenario">{{ getScenarioName(room.scenario) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Difficulté</span>
+              <span class="value difficulty" [style.color]="getDifficultyColor(room.difficulty)">
+                {{ room.difficulty }}
+              </span>
+            </div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-item">
+              <span class="label">Budget initial</span>
+              <span class="value budget">{{ room.initialBudget | number:'1.0-0' }}€</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Créée</span>
+              <span class="value time">{{ getTimeSinceCreation(room.createdAt) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Players Progress -->
+        <div class="players-section">
+          <div class="players-count">
+            <span class="icon">👥</span>
+            <span class="count">{{ room.currentPlayers }} / {{ room.maxPlayers }} joueurs</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="(room.currentPlayers / room.maxPlayers) * 100"></div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="room-actions">
+          <button 
+            class="btn-join" 
+            (click)="joinRoom(room)"
+            [disabled]="room.currentPlayers >= room.maxPlayers || room.status === 'FINISHED' || loading">
+            <span *ngIf="room.status === 'FINISHED'">🏁 Terminée</span>
+            <span *ngIf="room.status !== 'FINISHED' && room.currentPlayers >= room.maxPlayers">🔒 Pleine</span>
+            <span *ngIf="room.status !== 'FINISHED' && room.currentPlayers < room.maxPlayers">
+              🎮 {{ room.status === 'IN_PROGRESS' ? 'Rejoindre en cours' : 'Rejoindre' }}
+            </span>
+          </button>
+          <button class="btn-observe" (click)="observeRoom(room)">
+            <span>👁️ Observer</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state" *ngIf="rooms.length === 0 && !loading">
+      <div class="empty-icon">🎮</div>
+      <h3>Aucune salle disponible</h3>
+      <p>Créez la première salle pour commencer à trader !</p>
+      <button class="btn-create-big" (click)="openCreateModal()">
+        ➕ Créer une Salle
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal création -->
+  <div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Créer une Nouvelle Salle</h2>
+        <button class="btn-close" (click)="closeCreateModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nom de la salle *</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newRoom.name" 
+            placeholder="Ex: Ma super salle de trading"
+            class="form-input"
+            maxlength="50">
+          <span class="hint">{{ newRoom.name.length }}/50 caractères</span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Scénario</label>
+            <select [(ngModel)]="newRoom.scenario" class="form-select">
+              <option value="NORMAL">🟢 Marché Normal</option>
+              <option value="CRASH_2008">🔴 Crise 2008</option>
+              <option value="COVID_2020">🦠 Pandémie COVID</option>
+              <option value="VOLATILE">⚡ Haute Volatilité</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Difficulté</label>
+            <select [(ngModel)]="newRoom.difficulty" class="form-select">
+              <option value="EASY">Facile</option>
+              <option value="MEDIUM">Moyen</option>
+              <option value="HARD">Difficile</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Joueurs max</label>
+            <input 
+              type="number" 
+              [(ngModel)]="newRoom.maxPlayers" 
+              min="2" 
+              max="50"
+              class="form-input">
+            <span class="hint">2-50 joueurs</span>
+          </div>
+
+          <div class="form-group">
+            <label>Durée (minutes)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="newRoom.duration" 
+              min="5" 
+              max="120"
+              class="form-input">
+            <span class="hint">5-120 minutes</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Budget initial</label>
+          <input 
+            type="number" 
+            [(ngModel)]="newRoom.initialBudget" 
+            step="10000"
+            min="10000"
+            max="1000000"
+            class="form-input">
+          <span class="hint">Budget de départ pour chaque joueur</span>
+        </div>
+
+        <!-- Preview -->
+        <div class="room-preview">
+          <h4>Aperçu</h4>
+          <div class="preview-content">
+            <p><strong>{{ newRoom.name || 'Nom de la salle' }}</strong></p>
+            <p>{{ getScenarioName(newRoom.scenario) }} · {{ newRoom.difficulty }} · {{ newRoom.maxPlayers }} joueurs · {{ newRoom.duration }} min</p>
+            <p class="budget">Budget: {{ newRoom.initialBudget | number:'1.0-0' }}€</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeCreateModal()">
+          Annuler
+        </button>
+        <button class="btn-confirm" (click)="createRoom()" [disabled]="!newRoom.name.trim() || loading">
+          <span *ngIf="!loading">✨ Créer la Salle</span>
+          <span *ngIf="loading">⏳ Création...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <p class="loading-text">Connexion en cours...</p>
+    </div>
+  </div>
+</div>
