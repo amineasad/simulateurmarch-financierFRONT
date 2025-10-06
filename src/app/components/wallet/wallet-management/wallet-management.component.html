@@ -1,0 +1,162 @@
+<!-- src/app/components/wallet/wallet-management/wallet-management.component.html -->
+
+<div class="wallet-container">
+  
+  <!-- Header -->
+  <div class="wallet-header">
+    <button class="btn-back" (click)="goBack()">
+      ← Retour au Trading
+    </button>
+    <h1 class="wallet-title">Gestion du Portefeuille</h1>
+  </div>
+
+  <!-- Solde -->
+  <div class="wallet-balance-card">
+    <div class="balance-label">Solde disponible</div>
+    <div class="balance-amount" *ngIf="wallet">
+      {{ wallet.balance | number:'1.2-2' }} €
+    </div>
+    <div class="balance-amount" *ngIf="!wallet">
+      Chargement...
+    </div>
+  </div>
+
+  <!-- Onglets -->
+  <div class="tabs">
+    <button 
+      class="tab"
+      [class.active]="activeTab === 'deposit'"
+      (click)="setTab('deposit')">
+      Déposer
+    </button>
+    <button 
+      class="tab"
+      [class.active]="activeTab === 'withdraw'"
+      (click)="setTab('withdraw')">
+      Retirer
+    </button>
+    <button 
+      class="tab"
+      [class.active]="activeTab === 'history'"
+      (click)="setTab('history')">
+      Historique
+    </button>
+  </div>
+
+  <!-- Contenu des onglets -->
+  <div class="tab-content">
+    
+    <!-- Onglet Dépôt -->
+    <div *ngIf="activeTab === 'deposit'" class="deposit-section">
+      <h2 class="section-title">Alimenter votre compte</h2>
+      <p class="section-description">
+        Ajoutez des fonds à votre portefeuille pour commencer à trader
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">Montant à déposer (€)</label>
+        <input 
+          type="number" 
+          [(ngModel)]="depositAmount"
+          class="form-input"
+          placeholder="Ex: 1000"
+          min="0"
+          step="10">
+      </div>
+
+      <div class="quick-amounts">
+        <button class="quick-btn" (click)="depositAmount = 100">100€</button>
+        <button class="quick-btn" (click)="depositAmount = 500">500€</button>
+        <button class="quick-btn" (click)="depositAmount = 1000">1000€</button>
+        <button class="quick-btn" (click)="depositAmount = 5000">5000€</button>
+      </div>
+
+      <button 
+        class="btn-action btn-deposit"
+        [disabled]="isLoading || depositAmount <= 0"
+        (click)="onDeposit()">
+        <span *ngIf="!isLoading">💳 Déposer {{ depositAmount || 0 }}€</span>
+        <span *ngIf="isLoading">Traitement...</span>
+      </button>
+
+      <div class="info-box">
+        <strong>Mode Test Stripe</strong><br>
+        Pour le moment, les dépôts sont simulés. L'intégration Stripe réelle sera ajoutée prochainement.
+      </div>
+    </div>
+
+    <!-- Onglet Retrait -->
+    <div *ngIf="activeTab === 'withdraw'" class="withdraw-section">
+      <h2 class="section-title">Retirer des fonds</h2>
+      <p class="section-description">
+        Retirez de l'argent de votre portefeuille
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">Montant à retirer (€)</label>
+        <input 
+          type="number" 
+          [(ngModel)]="withdrawAmount"
+          class="form-input"
+          placeholder="Ex: 500"
+          min="0"
+          [max]="wallet?.balance || 0"
+          step="10">
+      </div>
+
+      <div class="balance-info" *ngIf="wallet">
+        Solde disponible : <strong>{{ wallet.balance | number:'1.2-2' }}€</strong>
+      </div>
+
+      <button 
+        class="btn-action btn-withdraw"
+        [disabled]="isLoading || withdrawAmount <= 0 || (wallet && withdrawAmount > wallet.balance)"
+        (click)="onWithdraw()">
+        <span *ngIf="!isLoading">💸 Retirer {{ withdrawAmount || 0 }}€</span>
+        <span *ngIf="isLoading">Traitement...</span>
+      </button>
+    </div>
+
+    <!-- Onglet Historique -->
+    <div *ngIf="activeTab === 'history'" class="history-section">
+      <h2 class="section-title">Historique des transactions</h2>
+
+      <div class="transactions-list" *ngIf="transactions.length > 0">
+        <div 
+          class="transaction-item"
+          *ngFor="let transaction of transactions"
+          [ngClass]="getTransactionColor(transaction.type)">
+          <div class="transaction-icon">
+            {{ getTransactionIcon(transaction.type) }}
+          </div>
+          <div class="transaction-info">
+            <div class="transaction-type">
+              {{ transaction.type === 'DEPOSIT' ? 'Dépôt' : 'Retrait' }}
+            </div>
+            <div class="transaction-date">
+              {{ transaction.createdAt | date:'dd/MM/yyyy HH:mm' }}
+            </div>
+          </div>
+          <div class="transaction-amount">
+            {{ transaction.type === 'DEPOSIT' ? '+' : '-' }}{{ transaction.amount | number:'1.2-2' }}€
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="transactions.length === 0">
+        <p>Aucune transaction pour le moment</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Messages -->
+  <div class="message success-message" *ngIf="successMessage">
+    ✓ {{ successMessage }}
+  </div>
+
+  <div class="message error-message" *ngIf="errorMessage">
+    ⚠ {{ errorMessage }}
+  </div>
+
+</div>

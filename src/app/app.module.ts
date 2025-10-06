@@ -15,6 +15,10 @@ import { GameRoomComponent } from './components/game-room/game-room.component'; 
 import { WebsocketService } from './services/websocket.service';
 import { TradingService } from './services/trading.service';
 import { GameService } from './services/game.service';
+import { LoginComponent } from './components/auth/login/login.component';
+import { RegisterComponent } from './components/auth/register/register.component';
+import { WalletManagementComponent } from './components/wallet/wallet-management/wallet-management.component';
+import { SuccessComponent } from './components/wallet/success/success.component';
 
 @NgModule({
   declarations: [
@@ -22,7 +26,11 @@ import { GameService } from './services/game.service';
     TradingRoomComponent,
     PriceChartComponent,
     GameLobbyComponent,
-    GameRoomComponent // ← Ajout
+    GameRoomComponent,
+    LoginComponent,
+    RegisterComponent,
+    WalletManagementComponent,
+    SuccessComponent // ← Ajout
   ],
   imports: [
     BrowserModule,
