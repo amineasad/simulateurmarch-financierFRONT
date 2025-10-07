@@ -1,0 +1,155 @@
+<!-- src/app/components/portfolio/portfolio.component.html -->
+
+<div class="portfolio-container">
+  
+  <!-- Header -->
+  <div class="portfolio-header">
+    <button class="btn-back" (click)="goBack()">
+      ← Retour au Trading
+    </button>
+    <h1 class="portfolio-title">Mon Portefeuille</h1>
+  </div>
+
+  <!-- Vue d'ensemble -->
+  <div class="overview-cards">
+    <div class="overview-card">
+      <div class="card-label">Valeur Totale</div>
+      <div class="card-value">{{ getTotalValue() | number:'1.2-2' }}€</div>
+    </div>
+
+    <div class="overview-card">
+      <div class="card-label">Cash Disponible</div>
+      <div class="card-value cash">{{ cashAvailable | number:'1.2-2' }}€</div>
+    </div>
+
+    <div class="overview-card">
+      <div class="card-label">Valeur Investie</div>
+      <div class="card-value">{{ totalPortfolioValue | number:'1.2-2' }}€</div>
+    </div>
+
+    <div class="overview-card" [class.positive]="totalPnL >= 0" [class.negative]="totalPnL < 0">
+      <div class="card-label">P&L Total</div>
+      <div class="card-value pnl">
+        {{ totalPnL >= 0 ? '+' : '' }}{{ totalPnL | number:'1.2-2' }}€
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions rapides -->
+  <div class="quick-actions">
+    <button class="action-btn btn-primary" (click)="goToOrders()">
+      📝 Passer un ordre
+    </button>
+    <button class="action-btn btn-secondary" (click)="goToWallet()">
+      💰 Gérer mon portefeuille
+    </button>
+  </div>
+
+  <!-- Messages de succès/erreur -->
+  <div class="message success-message" *ngIf="successMessage">
+    ✓ {{ successMessage }}
+  </div>
+
+  <div class="message error-message" *ngIf="errorMessage">
+    ⚠ {{ errorMessage }}
+  </div>
+
+  <!-- NOUVELLE SECTION : Ordres en Attente -->
+  <div class="pending-orders-section" *ngIf="pendingOrders.length > 0">
+    <h2 class="section-title">⏳ Ordres en Attente</h2>
+
+    <div class="pending-orders-list">
+      <div class="pending-order-card" *ngFor="let order of pendingOrders">
+        <div class="order-header">
+          <div class="order-info">
+            <span class="symbol">{{ order.symbol }}</span>
+            <span class="side" [class.buy]="order.side === 'BUY'" [class.sell]="order.side === 'SELL'">
+              {{ order.side === 'BUY' ? 'ACHAT' : 'VENTE' }}
+            </span>
+            <span class="type">{{ order.type }}</span>
+          </div>
+          <button class="btn-cancel" (click)="cancelOrder(order.orderId)">
+            ❌ Annuler
+          </button>
+        </div>
+
+        <div class="order-details">
+          <div class="detail-item">
+            <span class="label">Quantité</span>
+            <span class="value">{{ order.quantity }} actions</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Prix Limite</span>
+            <span class="value">{{ order.price | number:'1.2-2' }}€</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Date</span>
+            <span class="value">{{ order.createdAt }}</span>
+          </div>
+        </div>
+
+        <div class="order-status">
+          <span class="status-badge pending">⏳ EN ATTENTE</span>
+          <span class="order-explanation">
+            Cet ordre sera exécuté quand le prix {{ order.side === 'BUY' ? 'descendra' : 'montera' }} à {{ order.price | number:'1.2-2' }}€
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Positions -->
+  <div class="positions-section">
+    <h2 class="section-title">📊 Mes Positions</h2>
+
+    <div class="positions-list" *ngIf="!isLoading && portfolio.length > 0">
+      <div class="position-card" *ngFor="let position of portfolio">
+        <div class="position-header">
+          <div class="position-symbol">{{ position.symbol }}</div>
+          <div class="position-quantity">{{ position.quantity }} actions</div>
+        </div>
+
+        <div class="position-details">
+          <div class="detail-row">
+            <span class="label">Prix Moyen d'Achat (PMR)</span>
+            <span class="value">{{ position.avgPrice | number:'1.2-2' }}€</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Prix Actuel</span>
+            <span class="value">{{ position.currentPrice | number:'1.2-2' }}€</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Valeur Totale</span>
+            <span class="value">{{ (position.quantity * position.currentPrice) | number:'1.2-2' }}€</span>
+          </div>
+        </div>
+
+        <div class="position-pnl" [class.positive]="getPositionPnL(position) >= 0" [class.negative]="getPositionPnL(position) < 0">
+          <div class="pnl-label">Plus/Moins-Value</div>
+          <div class="pnl-values">
+            <span class="pnl-amount">
+              {{ getPositionPnL(position) >= 0 ? '+' : '' }}{{ getPositionPnL(position) | number:'1.2-2' }}€
+            </span>
+            <span class="pnl-percent">
+              ({{ getPositionPnL(position) >= 0 ? '+' : '' }}{{ getPositionPnLPercent(position) | number:'1.2-2' }}%)
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="!isLoading && portfolio.length === 0">
+      <div class="empty-icon">📊</div>
+      <h3>Aucune position</h3>
+      <p>Vous n'avez pas encore d'actions dans votre portefeuille</p>
+      <button class="btn-primary" (click)="goToOrders()">
+        Commencer à trader
+      </button>
+    </div>
+
+    <div class="loading-state" *ngIf="isLoading">
+      <p>Chargement du portefeuille...</p>
+    </div>
+  </div>
+
+</div>

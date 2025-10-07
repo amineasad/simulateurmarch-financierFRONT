@@ -19,6 +19,8 @@ import { LoginComponent } from './components/auth/login/login.component';
 import { RegisterComponent } from './components/auth/register/register.component';
 import { WalletManagementComponent } from './components/wallet/wallet-management/wallet-management.component';
 import { SuccessComponent } from './components/wallet/success/success.component';
+import { OrdersComponent } from './components/orders/orders.component';
+import { PortfolioComponent } from './components/portfolio/portfolio.component';
 
 @NgModule({
   declarations: [
@@ -30,7 +32,9 @@ import { SuccessComponent } from './components/wallet/success/success.component'
     LoginComponent,
     RegisterComponent,
     WalletManagementComponent,
-    SuccessComponent // ← Ajout
+    SuccessComponent,
+    OrdersComponent,
+    PortfolioComponent // ← Ajout
   ],
   imports: [
     BrowserModule,

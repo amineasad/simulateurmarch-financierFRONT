@@ -13,7 +13,7 @@ export class TradingService {
 
   // États observables
   private assets$ = new BehaviorSubject<Asset[]>([]);
-  private portfolio$ = new BehaviorSubject<Position[]>([]);
+  private portfolio$ = new BehaviorSubject<Position[]>([]); // ✅ VIDÉ
   private cash$ = new BehaviorSubject<number>(100000);
   private selectedAsset$ = new BehaviorSubject<string>('AAPL');
 
@@ -24,13 +24,13 @@ export class TradingService {
   /**
    * Charger les données initiales depuis le backend
    */
- private loadInitialData(): void {
-  // MODE MOCK : Charger directement les données simulées
-  this.loadMockData();
-  
-  // Pas d'appel HTTP pour l'instant
-  // Les appels HTTP seront activés quand le backend sera prêt
-}
+  private loadInitialData(): void {
+    // MODE MOCK : Charger directement les données simulées
+    this.loadMockData();
+    
+    // Pas d'appel HTTP pour l'instant
+    // Les appels HTTP seront activés quand le backend sera prêt
+  }
 
   /**
    * Données mock pour le développement (avant que le backend soit prêt)
@@ -45,14 +45,18 @@ export class TradingService {
       { symbol: 'META', name: 'Meta', price: 485.20, change: 2.89, volume: '12.7M', bid: 485.15, ask: 485.25 }
     ];
 
+    // ✅ PORTFOLIO VIDÉ - Suppression des positions simulées
     const mockPortfolio: Position[] = [
+      // ❌ TOUT SUPPRIMÉ
+      /*
       { symbol: 'AAPL', quantity: 150, avgPrice: 165.20, currentPrice: 178.50 },
       { symbol: 'MSFT', quantity: 80, avgPrice: 380.50, currentPrice: 412.80 },
       { symbol: 'GOOGL', quantity: 200, avgPrice: 138.00, currentPrice: 142.15 }
+      */
     ];
 
     this.assets$.next(mockAssets);
-    this.portfolio$.next(mockPortfolio);
+    this.portfolio$.next(mockPortfolio); // Tableau vide
   }
 
   /**

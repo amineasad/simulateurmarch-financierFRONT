@@ -1,0 +1,144 @@
+<!-- src/app/components/orders/orders.component.html -->
+
+<div class="orders-container">
+  
+  <!-- Header -->
+  <div class="orders-header">
+    <button class="btn-back" (click)="goBack()">
+      ← Retour au Trading
+    </button>
+    <h1 class="orders-title">Passer un Ordre</h1>
+  </div>
+
+  <!-- Info Asset -->
+  <div class="asset-info-card" *ngIf="selectedAsset">
+    <div class="asset-header">
+      <div class="asset-name">
+        <span class="symbol">{{ selectedAsset.symbol }}</span>
+        <span class="name">{{ selectedAsset.name }}</span>
+      </div>
+      <div class="asset-price">
+        <span class="price">{{ selectedAsset.price | number:'1.2-2' }}€</span>
+        <span class="change" [class.positive]="selectedAsset.change >= 0" [class.negative]="selectedAsset.change < 0">
+          {{ selectedAsset.change >= 0 ? '+' : '' }}{{ selectedAsset.change | number:'1.2-2' }}%
+        </span>
+      </div>
+    </div>
+    <div class="asset-details">
+      <div class="detail-item">
+        <span class="label">BID</span>
+        <span class="value">{{ selectedAsset.bid }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="label">ASK</span>
+        <span class="value">{{ selectedAsset.ask }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="label">Volume</span>
+        <span class="value">{{ selectedAsset.volume }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulaire d'ordre -->
+  <div class="order-form-card">
+    
+    <!-- Buy/Sell Buttons -->
+    <div class="order-side-buttons">
+      <button 
+        class="btn-side btn-buy"
+        [class.active]="orderForm.side === 'BUY'"
+        (click)="changeOrderSide('BUY')">
+        ACHETER
+      </button>
+      <button 
+        class="btn-side btn-sell"
+        [class.active]="orderForm.side === 'SELL'"
+        (click)="changeOrderSide('SELL')">
+        VENDRE
+      </button>
+    </div>
+
+    <!-- Type d'ordre -->
+    <div class="form-group">
+      <label class="form-label">Type d'ordre</label>
+      <div class="order-type-buttons">
+        <button 
+          class="btn-type"
+          [class.active]="orderForm.type === 'MARKET'"
+          (click)="changeOrderType('MARKET')">
+          Marché
+        </button>
+        <button 
+          class="btn-type"
+          [class.active]="orderForm.type === 'LIMIT'"
+          (click)="changeOrderType('LIMIT')">
+          Limite
+        </button>
+        <button 
+          class="btn-type"
+          [class.active]="orderForm.type === 'STOP'"
+          (click)="changeOrderType('STOP')">
+          Stop
+        </button>
+      </div>
+    </div>
+
+    <!-- Quantité & Prix -->
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Quantité</label>
+        <input 
+          type="number" 
+          [(ngModel)]="orderForm.quantity"
+          min="1"
+          class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Prix (€)</label>
+        <input 
+          type="number" 
+          [(ngModel)]="orderForm.price"
+          step="0.01"
+          [disabled]="orderForm.type === 'MARKET'"
+          class="form-input">
+      </div>
+    </div>
+
+    <!-- Résumé -->
+    <div class="order-summary">
+      <div class="summary-row">
+        <span class="label">Total</span>
+        <span class="value">{{ getOrderTotal() | number:'1.2-2' }}€</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Cash disponible</span>
+        <span class="value cash">{{ cashAvailable | number:'1.2-2' }}€</span>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="message error-message" *ngIf="errorMessage">
+      ⚠️ {{ errorMessage }}
+    </div>
+
+    <div class="message success-message" *ngIf="successMessage">
+      ✓ {{ successMessage }}
+    </div>
+
+    <!-- Bouton Submit -->
+    <button 
+      class="btn-submit"
+      [class.buy]="orderForm.side === 'BUY'"
+      [class.sell]="orderForm.side === 'SELL'"
+      [disabled]="isLoading"
+      (click)="placeOrder()">
+      <span *ngIf="!isLoading">
+        {{ orderForm.side === 'BUY' ? '🟢 ACHETER' : '🔴 VENDRE' }} {{ orderForm.symbol }}
+      </span>
+      <span *ngIf="isLoading">Traitement...</span>
+    </button>
+
+  </div>
+
+</div>

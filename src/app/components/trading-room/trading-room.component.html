@@ -6,8 +6,8 @@
     <div class="top-bar-left">
       <div class="logo">TRADIX</div>
       <button class="btn-back" (click)="goToLobby()">
-  ← à la salle de jeu
-</button>
+        ← à la salle de jeu
+      </button>
       <div class="time-info">
         <span class="icon">🕐</span>
         <span class="time">{{ currentTime | date:'HH:mm:ss' }}</span>
@@ -99,9 +99,9 @@
       </div>
 
       <!-- Chart Area -->
-<div class="chart-area">
-  <app-price-chart [symbol]="selectedSymbol"></app-price-chart>
-</div>
+      <div class="chart-area">
+        <app-price-chart [symbol]="selectedSymbol"></app-price-chart>
+      </div>
 
       <!-- Order Book -->
       <div class="order-book">
@@ -134,115 +134,59 @@
 
     </div>
 
-    <!-- RIGHT PANEL - Orders & Portfolio -->
+    <!-- RIGHT PANEL - Navigation simplifiée -->
     <div class="right-panel">
       
-      <!-- Order Form -->
-      <div class="order-form-section">
-        <div class="section-header">
-          💰 PASSER UN ORDRE
-        </div>
-        
-        <div class="order-form">
-          <!-- Buy/Sell Buttons -->
-          <div class="order-side-buttons">
-            <button 
-              class="btn-side"
-              [class.active]="orderForm.side === 'BUY'"
-              (click)="changeOrderSide('BUY')">
-              ACHETER
-            </button>
-            <button 
-              class="btn-side"
-              [class.active]="orderForm.side === 'SELL'"
-              (click)="changeOrderSide('SELL')">
-              VENDRE
-            </button>
-          </div>
-
-          <!-- Order Type -->
-          <div class="form-group">
-            <label>Type d'ordre</label>
-            <select [(ngModel)]="orderForm.type" class="form-control">
-              <option value="MARKET">Marché</option>
-              <option value="LIMIT">Limite</option>
-              <option value="STOP">Stop Loss</option>
-            </select>
-          </div>
-
-          <!-- Quantity & Price -->
-          <div class="form-row">
-            <div class="form-group">
-              <label>Quantité</label>
-              <input 
-                type="number" 
-                [(ngModel)]="orderForm.quantity"
-                min="1"
-                class="form-control">
-            </div>
-            <div class="form-group">
-              <label>Prix (€)</label>
-              <input 
-                type="number" 
-                [(ngModel)]="orderForm.price"
-                step="0.01"
-                [disabled]="orderForm.type === 'MARKET'"
-                class="form-control">
-            </div>
-          </div>
-
-          <!-- Order Total -->
-          <div class="order-total">
-            <span>Total:</span>
-            <span class="total-value">{{ getOrderTotal() | number:'1.2-2' }}€</span>
-          </div>
-
-          <!-- Submit Button -->
-          <button 
-            class="btn-submit"
-            [class.buy]="orderForm.side === 'BUY'"
-            [class.sell]="orderForm.side === 'SELL'"
-            [disabled]="!isConnected"
-            (click)="placeOrder()">
-            {{ orderForm.side === 'BUY' ? '🟢 ACHETER' : '🔴 VENDRE' }} {{ selectedSymbol }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Portfolio -->
-      <div class="portfolio-section">
+      <!-- Résumé Portefeuille -->
+      <div class="portfolio-summary-section">
         <div class="section-header portfolio-header">
-          <span>📊 PORTEFEUILLE</span>
+          <span>💼 PORTEFEUILLE</span>
           <span class="pnl" [class.positive]="totalPnL >= 0" [class.negative]="totalPnL < 0">
             {{ totalPnL >= 0 ? '+' : '' }}{{ totalPnL | number:'1.2-2' }}€
           </span>
         </div>
 
-        <div class="portfolio-summary">
-          <div class="summary-item">
+        <div class="summary-stats">
+          <div class="stat-item">
             <span class="label">Valeur totale</span>
             <span class="value">{{ totalPortfolioValue | number:'1.2-2' }}€</span>
           </div>
-          <div class="summary-item">
+          <div class="stat-item">
             <span class="label">Cash disponible</span>
             <span class="value cash">{{ cash | number:'1.2-2' }}€</span>
           </div>
         </div>
 
-        <div class="positions-list">
-          <div class="position-item" *ngFor="let position of portfolio">
-            <div class="position-header">
+        <!-- Boutons de navigation -->
+        <div class="action-buttons">
+          <button class="nav-btn btn-order" (click)="goToOrders()">
+            📝 Passer un ordre
+          </button>
+          <button class="nav-btn btn-portfolio" (click)="goToPortfolio()">
+            💼 Voir détails
+          </button>
+          <button class="nav-btn btn-wallet" (click)="goToWallet()">
+            💰 Gérer portefeuille
+          </button>
+        </div>
+      </div>
+
+      <!-- Positions (aperçu simplifié) -->
+      <div class="positions-preview-section">
+        <div class="section-header">
+          📊 POSITIONS
+        </div>
+
+        <div class="positions-preview-list">
+          <div class="position-preview-item" *ngFor="let position of portfolio">
+            <div class="position-info">
               <span class="symbol">{{ position.symbol }}</span>
               <span class="quantity">{{ position.quantity }} actions</span>
             </div>
-            <div class="position-details">
-              <span class="pmr">PMR: {{ position.avgPrice | number:'1.2-2' }}€</span>
-              <span class="pnl" 
-                    [class.positive]="getPositionPnL(position) >= 0"
-                    [class.negative]="getPositionPnL(position) < 0">
-                {{ getPositionPnL(position) >= 0 ? '+' : '' }}{{ getPositionPnL(position) | number:'1.2-2' }}€
-                ({{ getPositionPnLPercent(position) | number:'1.2-2' }}%)
-              </span>
+            <div class="position-pnl" 
+                 [class.positive]="getPositionPnL(position) >= 0"
+                 [class.negative]="getPositionPnL(position) < 0">
+              {{ getPositionPnL(position) >= 0 ? '+' : '' }}{{ getPositionPnL(position) | number:'1.2-2' }}€
             </div>
           </div>
         </div>

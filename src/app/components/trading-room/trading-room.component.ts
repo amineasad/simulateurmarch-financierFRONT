@@ -4,6 +4,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { WebsocketService } from '../../services/websocket.service';
 import { TradingService } from '../../services/trading.service';
+import { WalletService } from '../../services/wallet.service';
+import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { 
   Asset, 
@@ -33,7 +35,7 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
   
   // Portfolio
   portfolio: Position[] = [];
-  cash = 100000;
+  cash = 0;
   totalPortfolioValue = 0;
   totalPnL = 0;
   
@@ -57,7 +59,7 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
   notifications: Notification[] = [];
   chatMessages: ChatMessage[] = [];
   chatInput = '';
-  username = 'TraderPro_' + Math.floor(Math.random() * 1000);
+  username = ''; // ✅ MODIFIÉ : Vide par défaut
   
   // Statistiques
   onlineTraders = 24;
@@ -71,22 +73,83 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
   constructor(
     private wsService: WebsocketService,
     private tradingService: TradingService,
+    private walletService: WalletService,
+    private authService: AuthService,
     private router: Router,
   ) {}
   
 
   ngOnInit(): void {
+    // ✅ NOUVEAU : Charger le username en premier
+    this.loadUsername();
+    
     // Démarrer l'horloge
     this.startClock();
     
     // Charger les données initiales
     this.loadInitialData();
     
+    // Charger le wallet (cash disponible)
+    this.loadWalletBalance();
+    
     // Connexion WebSocket
     this.connectToWebSocket();
     
     // Charger le carnet d'ordres mock
     this.loadMockOrderBook();
+  }
+
+  /**
+   * ✅ NOUVELLE MÉTHODE : Charger le username de l'utilisateur connecté
+   */
+  private loadUsername(): void {
+    const user = this.authService.getCurrentUser();
+    
+    if (user) {
+      // Utiliser prenom + nom (vos champs)
+      if (user.prenom && user.nom) {
+        this.username = `${user.prenom} ${user.nom}`;
+      } 
+      // Fallback : juste le prénom
+      else if (user.prenom) {
+        this.username = user.prenom;
+      }
+      // Fallback : email
+      else if (user.email) {
+        this.username = user.email.split('@')[0];
+      }
+      // Fallback final
+      else {
+        this.username = 'Trader';
+      }
+    } else {
+      this.username = 'Invité';
+    }
+    
+    console.log('✅ Username chargé:', this.username);
+  }
+
+  /**
+   * Charger le solde du wallet
+   */
+  private loadWalletBalance(): void {
+    const user = this.authService.getCurrentUser();
+    if (!user || !user.id) {
+      console.error('Utilisateur non connecté');
+      return;
+    }
+
+    this.walletService.getWallet(user.id).subscribe({
+      next: (wallet) => {
+        this.cash = wallet.balance;
+        console.log('💰 Cash chargé depuis le wallet:', this.cash);
+      },
+      error: (error) => {
+        console.error('Erreur chargement wallet:', error);
+        this.cash = 0;
+        this.addNotification('error', 'Impossible de charger le solde');
+      }
+    });
   }
 
   /**
@@ -115,12 +178,6 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
       this.calculatePortfolioStats();
     });
     this.subscriptions.push(portfolioSub);
-
-    // Charger le cash
-    const cashSub = this.tradingService.getCash().subscribe(cash => {
-      this.cash = cash;
-    });
-    this.subscriptions.push(cashSub);
 
     // Observer l'asset sélectionné
     const selectedSub = this.tradingService.getSelectedAsset().subscribe(symbol => {
@@ -184,10 +241,12 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
       const order = update.executedOrder;
       if (order.side === 'BUY') {
         this.tradingService.addPosition(order.symbol, order.quantity, order.price);
-        this.tradingService.updateCash(-order.price * order.quantity);
+        // Recharger le wallet après achat
+        this.loadWalletBalance();
       } else {
         this.tradingService.removePosition(order.symbol, order.quantity);
-        this.tradingService.updateCash(order.price * order.quantity);
+        // Recharger le wallet après vente
+        this.loadWalletBalance();
       }
       
       this.volumeToday += order.price * order.quantity;
@@ -354,6 +413,34 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
     this.orderForm.side = side;
   }
 
+  /**
+   * Navigation vers la page des ordres
+   */
+  goToOrders(): void {
+    this.router.navigate(['/orders']);
+  }
+
+  /**
+   * Navigation vers la page du portfolio
+   */
+  goToPortfolio(): void {
+    this.router.navigate(['/portfolio']);
+  }
+
+  /**
+   * Navigation vers la page de gestion du wallet
+   */
+  goToWallet(): void {
+    this.router.navigate(['/wallet/manage']);
+  }
+
+  /**
+   * Retour au lobby
+   */
+  goToLobby(): void {
+    this.router.navigate(['/lobby']);
+  }
+
   ngOnDestroy(): void {
     // Désabonnement
     this.subscriptions.forEach(sub => sub.unsubscribe());
@@ -361,7 +448,4 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
     // Déconnexion WebSocket
     this.wsService.disconnect();
   }
-  goToLobby(): void {
-  this.router.navigate(['/lobby']);
-}
 }
