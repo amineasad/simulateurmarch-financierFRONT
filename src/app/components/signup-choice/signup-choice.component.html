@@ -1,0 +1,66 @@
+<!-- src/app/components/signup-choice/signup-choice.component.html -->
+
+<div class="signup-choice-container">
+  <div class="choice-content">
+    <!-- Header -->
+    <div class="header">
+      <button class="btn-back" (click)="goBack()">
+        ← Retour
+      </button>
+      <h1 class="title">Choisissez votre profil</h1>
+      <p class="subtitle">Sélectionnez le type de compte que vous souhaitez créer</p>
+    </div>
+
+    <!-- Cartes de choix -->
+    <div class="profile-cards">
+      
+      <!-- Carte Étudiant -->
+      <div class="profile-card" (click)="selectProfile('student')">
+        <div class="card-icon">🎓</div>
+        <h2>Étudiant</h2>
+        <p>Compte étudiant avec avantages spéciaux</p>
+        <ul class="requirements">
+          <li>✓ Carte d'identité</li>
+          <li>✓ Carte d'étudiant</li>
+          <li>✓ Photos (face + profil)</li>
+        </ul>
+        <button class="btn-select">Choisir</button>
+      </div>
+
+      <!-- Carte Entreprise -->
+      <div class="profile-card" (click)="selectProfile('company')">
+        <div class="card-icon">🏢</div>
+        <h2>Entreprise</h2>
+        <p>Compte professionnel pour les sociétés</p>
+        <ul class="requirements">
+          <li>✓ Informations légales</li>
+          <li>✓ Matricule fiscale</li>
+          <li>✓ Registre de commerce</li>
+        </ul>
+        <button class="btn-select">Choisir</button>
+      </div>
+
+      <!-- Carte Particulier -->
+      <div class="profile-card" (click)="selectProfile('individual')">
+        <div class="card-icon">👤</div>
+        <h2>Particulier</h2>
+        <p>Compte personnel standard</p>
+        <ul class="requirements">
+          <li>✓ Carte d'identité</li>
+          <li>✓ Photo de visage</li>
+          <li>✓ Informations personnelles</li>
+        </ul>
+        <button class="btn-select">Choisir</button>
+      </div>
+
+    </div>
+
+    <!-- Lien vers connexion -->
+    <div class="login-link">
+      <p>
+        Vous avez déjà un compte ? 
+        <a (click)="goToLogin()">Se connecter</a>
+      </p>
+    </div>
+  </div>
+</div>

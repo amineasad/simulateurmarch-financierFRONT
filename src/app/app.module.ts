@@ -16,11 +16,15 @@ import { WebsocketService } from './services/websocket.service';
 import { TradingService } from './services/trading.service';
 import { GameService } from './services/game.service';
 import { LoginComponent } from './components/auth/login/login.component';
-import { RegisterComponent } from './components/auth/register/register.component';
 import { WalletManagementComponent } from './components/wallet/wallet-management/wallet-management.component';
 import { SuccessComponent } from './components/wallet/success/success.component';
 import { OrdersComponent } from './components/orders/orders.component';
 import { PortfolioComponent } from './components/portfolio/portfolio.component';
+import { LandingComponent } from './components/landing/landing.component';
+import { SignupChoiceComponent } from './components/signup-choice/signup-choice.component';
+import { SignupStudentComponent } from './components/signup-student/signup-student.component';
+import { SignupIndividualComponent } from './components/signup-individual/signup-individual.component';
+import { SignupCompanyComponent } from './components/signup-company/signup-company.component';
 
 @NgModule({
   declarations: [
@@ -30,11 +34,16 @@ import { PortfolioComponent } from './components/portfolio/portfolio.component';
     GameLobbyComponent,
     GameRoomComponent,
     LoginComponent,
-    RegisterComponent,
+
     WalletManagementComponent,
     SuccessComponent,
     OrdersComponent,
-    PortfolioComponent // ← Ajout
+    PortfolioComponent,
+    LandingComponent,
+    SignupChoiceComponent,
+    SignupStudentComponent,
+    SignupIndividualComponent,
+    SignupCompanyComponent // ← Ajout
   ],
   imports: [
     BrowserModule,

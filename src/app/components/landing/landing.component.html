@@ -1,0 +1,45 @@
+<!-- src/app/components/landing/landing.component.html -->
+
+<div class="landing-container">
+  <div class="landing-content">
+    <!-- Logo et titre -->
+    <div class="hero-section">
+      <div class="logo-container">
+        <div class="logo">📈</div>
+      </div>
+      <h1 class="main-title">Trading Platform</h1>
+      <p class="subtitle">
+        Plateforme de trading moderne pour investir en toute sécurité
+      </p>
+    </div>
+
+    <!-- Boutons d'action -->
+    <div class="action-buttons">
+      <button class="btn btn-primary" (click)="goToSignupChoice()">
+        ✨ S'inscrire
+      </button>
+      <button class="btn btn-secondary" (click)="goToLogin()">
+        🔑 Connexion
+      </button>
+    </div>
+
+    <!-- Features -->
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Trading en temps réel</h3>
+        <p>Passez vos ordres instantanément</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Analyses avancées</h3>
+        <p>Graphiques et données en temps réel</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3>Sécurisé</h3>
+        <p>Vos données protégées</p>
+      </div>
+    </div>
+  </div>
+</div>
