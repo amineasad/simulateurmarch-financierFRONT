@@ -10,6 +10,7 @@ import { TradingRoomComponent } from './components/trading-room/trading-room.com
 import { PriceChartComponent } from './components/price-chart/price-chart.component';
 import { GameLobbyComponent } from './components/game-lobby/game-lobby.component';
 import { GameRoomComponent } from './components/game-room/game-room.component'; // ← Ajout
+import { LobbyComponent } from './components/gamingroom/lobby.component';
 
 // Services
 import { WebsocketService } from './services/websocket.service';
@@ -34,7 +35,7 @@ import { SignupCompanyComponent } from './components/signup-company/signup-compa
     GameLobbyComponent,
     GameRoomComponent,
     LoginComponent,
-
+LobbyComponent,
     WalletManagementComponent,
     SuccessComponent,
     OrdersComponent,

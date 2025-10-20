@@ -11,7 +11,7 @@ import { PortfolioComponent } from './components/portfolio/portfolio.component';
 // Composants de jeu
 import { GameLobbyComponent } from './components/game-lobby/game-lobby.component';
 import { GameRoomComponent } from './components/game-room/game-room.component';
-
+import { LobbyComponent } from './components/gamingroom/lobby.component';
 // Composants d'authentification
 import { LoginComponent } from './components/auth/login/login.component';
 // ❌ SUPPRIMEZ cette ligne
@@ -45,8 +45,9 @@ const routes: Routes = [
   { path: 'signup/individual', component: SignupIndividualComponent },
   
   // Lobby et jeu
-  { path: 'lobby', component: GameLobbyComponent },
+  { path: 'lobby1', component: GameLobbyComponent },
   { path: 'game-room/:id', component: GameRoomComponent },
+  { path: 'lobby', component: LobbyComponent },
   
   // Trading
   { path: 'trading', component: TradingRoomComponent },

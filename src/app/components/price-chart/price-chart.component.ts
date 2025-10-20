@@ -74,7 +74,11 @@ export class PriceChartComponent implements OnInit, OnDestroy {
             displayColors: false,
             callbacks: {
               label: (context) => {
-                return `Prix: ${context.parsed.y.toFixed(2)}€`;
+                // ✅ CORRECTION: Vérifier que parsed.y n'est pas null
+                if (context.parsed && context.parsed.y !== null) {
+                  return `Prix: ${context.parsed.y.toFixed(2)}€`;
+                }
+                return '';
               }
             }
           }
