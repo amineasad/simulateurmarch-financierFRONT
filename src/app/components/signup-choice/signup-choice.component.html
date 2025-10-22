@@ -1,20 +1,36 @@
 <!-- src/app/components/signup-choice/signup-choice.component.html -->
 
+<!-- Barre d'étapes -->
+<div class="steps-bar">
+  <div class="step active">
+    <span class="step-number">1</span>
+    <span class="step-label">Informations personnelles </span>
+  </div>
+  <div class="connector"></div>
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-label">pièces justificatives</span>
+  </div>
+  <div class="connector"></div>
+  <div class="step">
+    <span class="step-number">3</span>
+    <span class="step-label">Vérification & Finalisation</span>
+  </div>
+</div>
+
+<!-- Contenu principal -->
 <div class="signup-choice-container">
   <div class="choice-content">
     <!-- Header -->
     <div class="header">
-      <button class="btn-back" (click)="goBack()">
-        ← Retour
-      </button>
+      
       <h1 class="title">Choisissez votre profil</h1>
       <p class="subtitle">Sélectionnez le type de compte que vous souhaitez créer</p>
     </div>
 
-    <!-- Cartes de choix -->
+    <!-- Cartes de profil -->
     <div class="profile-cards">
-      
-      <!-- Carte Étudiant -->
+      <!-- Étudiant -->
       <div class="profile-card" (click)="selectProfile('student')">
         <div class="card-icon">🎓</div>
         <h2>Étudiant</h2>
@@ -27,7 +43,7 @@
         <button class="btn-select">Choisir</button>
       </div>
 
-      <!-- Carte Entreprise -->
+      <!-- Entreprise -->
       <div class="profile-card" (click)="selectProfile('company')">
         <div class="card-icon">🏢</div>
         <h2>Entreprise</h2>
@@ -40,7 +56,7 @@
         <button class="btn-select">Choisir</button>
       </div>
 
-      <!-- Carte Particulier -->
+      <!-- Particulier -->
       <div class="profile-card" (click)="selectProfile('individual')">
         <div class="card-icon">👤</div>
         <h2>Particulier</h2>
@@ -52,13 +68,12 @@
         </ul>
         <button class="btn-select">Choisir</button>
       </div>
-
     </div>
 
     <!-- Lien vers connexion -->
     <div class="login-link">
       <p>
-        Vous avez déjà un compte ? 
+        Vous avez déjà un compte ?
         <a (click)="goToLogin()">Se connecter</a>
       </p>
     </div>

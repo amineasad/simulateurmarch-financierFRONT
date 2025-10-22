@@ -1,22 +1,104 @@
-/* src/app/components/signup-choice/signup-choice.component.css */
-
+/* ==== Conteneur principal avec scroll ==== */
 .signup-choice-container {
   min-height: 100vh;
+  overflow-y: auto;       /* scroll vertical si besoin */
+  overflow-x: hidden;     /* pas de scroll horizontal */
+  padding: 1.5rem 1rem 3rem 1rem; /* moins d’espace pour mieux voir */
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
 }
 
+/* Scrollbar personnalisé */
+.signup-choice-container::-webkit-scrollbar {
+  width: 10px;
+}
+
+.signup-choice-container::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 5px;
+}
+
+.signup-choice-container::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.5);
+  border-radius: 5px;
+}
+
+.signup-choice-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.7);
+}
+
+/* Contenu centré horizontalement */
 .choice-content {
   max-width: 1200px;
   width: 100%;
+  margin: 0 auto;
 }
 
+/* ==== Barre d'étapes ==== */
+.steps-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem; /* réduit l’écart entre étapes */
+  margin: 2rem auto 2.5rem auto;
+  max-width: 700px; /* réduit la largeur max */
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #94a3b8;
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.step-number {
+  width: 40px;  /* plus petit cercle */
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #3b82f6;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  background-color: transparent;
+  color: #3b82f6;
+  transition: all 0.3s ease;
+}
+
+.step.active .step-number {
+  background-color: #3b82f6;
+  color: white;
+  transform: scale(1.1);
+}
+
+.step-label {
+  font-size: 0.85rem; /* texte plus petit */
+}
+
+.step.active .step-label {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* Connecteurs entre étapes */
+.connector {
+  width: 60px;  /* plus court */
+  height: 3px;
+  background-color: rgba(59, 130, 246, 0.3);
+}
+
+.step.active + .connector {
+  background-color: #3b82f6;
+}
+
+/* ==== Header ==== */
 .header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 2.5rem;
   position: relative;
 }
 
@@ -24,7 +106,7 @@
   position: absolute;
   left: 0;
   top: 0;
-  padding: 0.65rem 1.25rem;
+  padding: 0.5rem 1rem;
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.3);
   border-radius: 0.5rem;
@@ -40,30 +122,31 @@
 }
 
 .title {
-  font-size: 2.5rem;
+  font-size: 2rem; /* réduit le titre */
   font-weight: 700;
   color: #f1f5f9;
   margin-bottom: 0.5rem;
 }
 
 .subtitle {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   color: #94a3b8;
 }
 
+/* ==== Cartes de profil ==== */
 .profile-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-  margin-bottom: 3rem;
+  gap: 1rem; /* réduit l’espace entre cartes */
+  margin-bottom: 2rem;
 }
 
 .profile-card {
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(20px);
   border: 2px solid rgba(59, 130, 246, 0.2);
-  border-radius: 1.5rem;
-  padding: 2.5rem;
+  border-radius: 1rem; /* plus compact */
+  padding: 1.5rem;      /* réduit le padding */
   text-align: center;
   cursor: pointer;
   transition: all 0.3s;
@@ -71,66 +154,67 @@
 
 .profile-card:hover {
   border-color: rgba(59, 130, 246, 0.6);
-  transform: translateY(-10px);
-  box-shadow: 0 10px 40px rgba(59, 130, 246, 0.3);
+  transform: translateY(-8px);
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3);
 }
 
 .card-icon {
-  font-size: 4rem;
-  margin-bottom: 1.5rem;
+  font-size: 3rem; /* icône plus petite */
+  margin-bottom: 1rem;
 }
 
 .profile-card h2 {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   color: #f1f5f9;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .profile-card p {
+  font-size: 0.9rem;
   color: #94a3b8;
-  margin-bottom: 1.5rem;
-  font-size: 1rem;
+  margin-bottom: 1rem;
 }
 
 .requirements {
   list-style: none;
   padding: 0;
-  margin: 1.5rem 0;
+  margin: 1rem 0;
   text-align: left;
 }
 
 .requirements li {
-  color: #94a3b8;
-  padding: 0.5rem 0;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
+  padding: 0.3rem 0;
 }
 
 .btn-select {
   width: 100%;
-  padding: 0.875rem;
+  padding: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  margin-top: 0.75rem;
   background: linear-gradient(135deg, #3b82f6, #8b5cf6);
   border: none;
-  border-radius: 0.75rem;
-  color: white;
-  font-weight: 600;
+  color: #fff;
   cursor: pointer;
   transition: all 0.3s;
-  margin-top: 1rem;
 }
 
 .btn-select:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
 }
 
+/* ==== Lien vers connexion ==== */
 .login-link {
   text-align: center;
-  margin-top: 2rem;
+  margin-top: 1.5rem;
 }
 
 .login-link p {
   color: #94a3b8;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .login-link a {
@@ -144,8 +228,24 @@
   text-decoration: underline;
 }
 
+/* ==== Responsive ==== */
 @media (max-width: 1024px) {
   .profile-cards {
     grid-template-columns: 1fr;
+  }
+
+  .steps-bar {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .step-number {
+    width: 35px;
+    height: 35px;
+    font-size: 0.9rem;
+  }
+
+  .step-label {
+    font-size: 0.8rem;
   }
 }

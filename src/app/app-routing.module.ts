@@ -14,6 +14,8 @@ import { GameRoomComponent } from './components/game-room/game-room.component';
 import { LobbyComponent } from './components/gamingroom/lobby.component';
 // Composants d'authentification
 import { LoginComponent } from './components/auth/login/login.component';
+import { AccountOpeningIntroComponent } from './components/account-opening-intro/account-opening-intro.component';
+
 // ❌ SUPPRIMEZ cette ligne
 // import { RegisterComponent } from './components/auth/register/register.component';
 
@@ -34,6 +36,7 @@ import { SuccessComponent } from './components/wallet/success/success.component'
 const routes: Routes = [
   // ✅ Page d'accueil = Landing Page
   { path: '', component: LandingComponent },
+  { path: 'open-account', component: AccountOpeningIntroComponent },
   
   // Authentification
   { path: 'login', component: LoginComponent },

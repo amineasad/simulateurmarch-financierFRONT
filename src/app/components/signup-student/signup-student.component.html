@@ -1,203 +1,134 @@
-<!-- src/app/components/signup-student/signup-student.component.html -->
+<!-- Barre d'étapes -->
+<div class="steps-bar">
+  <div class="step" [class.active]="currentStep === 1">
+    <span class="step-number">1</span>
+    <span class="step-label">Informations personnelles</span>
+  </div>
+  <div class="connector"></div>
+  <div class="step" [class.active]="currentStep === 2">
+    <span class="step-number">2</span>
+    <span class="step-label">Pièces justificatives</span>
+  </div>
+  <div class="connector"></div>
+  <div class="step" [class.active]="currentStep === 3">
+    <span class="step-number">3</span>
+    <span class="step-label">Vérification & Finalisation</span>
+  </div>
+</div>
 
+<!-- Contenu principal -->
 <div class="signup-container">
   <div class="signup-card">
     
     <!-- Header -->
     <div class="header">
-      <button class="btn-back" (click)="goBack()">
-        ← Retour
-      </button>
       <div class="icon">🎓</div>
       <h1>Inscription Étudiant</h1>
       <p class="subtitle">Créez votre compte étudiant</p>
     </div>
     
     <!-- Messages -->
-    <div class="alert alert-error" *ngIf="errorMessage">
-      {{ errorMessage }}
-    </div>
+    <div class="alert alert-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
     
-    <div class="alert alert-success" *ngIf="successMessage">
-      {{ successMessage }}
-    </div>
-    
-    <!-- Formulaire -->
-    <form (ngSubmit)="onSubmit()" class="form">
+    <!-- FORMULAIRE -->
+    <form class="form">
       
-      <!-- Informations personnelles -->
-      <div class="form-section">
+      <!-- Étape 1 : Informations personnelles -->
+      <div *ngIf="currentStep === 1" class="form-section">
         <h3 class="section-title">Informations personnelles</h3>
-        
         <div class="form-row">
           <div class="form-group">
             <label>Nom *</label>
-            <input 
-              type="text" 
-              [(ngModel)]="user.nom" 
-              name="nom" 
-              required
-              placeholder="Dupont"
-            />
+            <input type="text" [(ngModel)]="user.nom" name="nom" required placeholder="Dupont"/>
           </div>
-          
           <div class="form-group">
             <label>Prénom *</label>
-            <input 
-              type="text" 
-              [(ngModel)]="user.prenom" 
-              name="prenom" 
-              required
-              placeholder="Jean"
-            />
+            <input type="text" [(ngModel)]="user.prenom" name="prenom" required placeholder="Jean"/>
           </div>
         </div>
-        
         <div class="form-group">
           <label>Email *</label>
-          <input 
-            type="email" 
-            [(ngModel)]="user.email" 
-            name="email" 
-            required
-            placeholder="jean.dupont@student.com"
-          />
+          <input type="email" [(ngModel)]="user.email" name="email" required placeholder="jean.dupont@student.com"/>
         </div>
-        
         <div class="form-row">
           <div class="form-group">
             <label>Mot de passe *</label>
-            <input 
-              type="password" 
-              [(ngModel)]="user.motDePasse" 
-              name="motDePasse" 
-              required
-              placeholder="••••••••"
-            />
+            <input type="password" [(ngModel)]="user.motDePasse" name="motDePasse" required placeholder="••••••••"/>
           </div>
-          
           <div class="form-group">
             <label>Confirmer mot de passe *</label>
-            <input 
-              type="password" 
-              [(ngModel)]="confirmPassword" 
-              name="confirmPassword" 
-              required
-              placeholder="••••••••"
-            />
+            <input type="password" [(ngModel)]="confirmPassword" name="confirmPassword" required placeholder="••••••••"/>
           </div>
         </div>
       </div>
       
-      <!-- Documents -->
-      <div class="form-section">
-        <h3 class="section-title">Documents</h3>
-        
+      <!-- Étape 2 : Pièces justificatives -->
+      <div *ngIf="currentStep === 2" class="form-section">
+        <h3 class="section-title">Pièces justificatives</h3>
         <div class="form-row">
           <div class="form-group">
             <label>Numéro CIN *</label>
-            <input 
-              type="text" 
-              [(ngModel)]="user.cin" 
-              name="cin" 
-              required
-              placeholder="12345678"
-              maxlength="8"
-            />
+            <input type="text" [(ngModel)]="user.cin" name="cin" required placeholder="12345678" maxlength="8"/>
           </div>
-          
           <div class="form-group">
             <label>Numéro carte d'étudiant *</label>
-            <input 
-              type="text" 
-              [(ngModel)]="user.carteEtudiant" 
-              name="carteEtudiant" 
-              required
-              placeholder="STU2024001"
-            />
+            <input type="text" [(ngModel)]="user.carteEtudiant" name="carteEtudiant" required placeholder="STU2024001"/>
           </div>
         </div>
-      </div>
-      
-      <!-- Photos -->
-      <div class="form-section">
-        <h3 class="section-title">Photos</h3>
-        <p class="section-subtitle">Formats acceptés : JPG, PNG (max 5MB)</p>
-        
-        <!-- Photo de visage -->
+
+        <!-- Upload photos -->
         <div class="photo-upload-group">
-          <label class="photo-label">Photo de visage pour votre profil *</label>
-          <div class="photo-upload">
-            <input 
-              type="file" 
-              (change)="onPhotoVisageChange($event)" 
-              accept="image/*"
-              id="photoVisage"
-              hidden
-            />
-            <label for="photoVisage" class="upload-button">
-              📷 Choisir une photo
-            </label>
-            <div class="photo-preview" *ngIf="previewPhotoVisage">
-              <img [src]="previewPhotoVisage" alt="Preview" />
-              <span class="preview-label">✓ Photo téléchargée</span>
-            </div>
+          <label class="photo-label">Photo de visage *</label>
+          <input type="file" id="photoVisage" hidden (change)="onPhotoChange($event,'photoVisage')" accept="image/*"/>
+          <label for="photoVisage" class="upload-button">📷 Choisir une photo</label>
+          <div class="photo-preview" *ngIf="previewPhotoVisage">
+            <img [src]="previewPhotoVisage" alt="Preview"/>
+            <span class="preview-label">✓ Photo téléchargée</span>
           </div>
         </div>
-        
-        <!-- Photo de face -->
+
         <div class="photo-upload-group">
           <label class="photo-label">Photo de face *</label>
-          <div class="photo-upload">
-            <input 
-              type="file" 
-              (change)="onPhotoFaceChange($event)" 
-              accept="image/*"
-              id="photoFace"
-              hidden
-            />
-            <label for="photoFace" class="upload-button">
-              📷 Choisir une photo
-            </label>
-            <div class="photo-preview" *ngIf="previewPhotoFace">
-              <img [src]="previewPhotoFace" alt="Preview" />
-              <span class="preview-label">✓ Photo téléchargée</span>
-            </div>
+          <input type="file" id="photoFace" hidden (change)="onPhotoChange($event,'photoFace')" accept="image/*"/>
+          <label for="photoFace" class="upload-button">📷 Choisir une photo</label>
+          <div class="photo-preview" *ngIf="previewPhotoFace">
+            <img [src]="previewPhotoFace" alt="Preview"/>
+            <span class="preview-label">✓ Photo téléchargée</span>
           </div>
         </div>
-        
-        <!-- Photo de profil -->
+
         <div class="photo-upload-group">
           <label class="photo-label">Photo de profil *</label>
-          <div class="photo-upload">
-            <input 
-              type="file" 
-              (change)="onPhotoProfilChange($event)" 
-              accept="image/*"
-              id="photoProfil"
-              hidden
-            />
-            <label for="photoProfil" class="upload-button">
-              📷 Choisir une photo
-            </label>
-            <div class="photo-preview" *ngIf="previewPhotoProfil">
-              <img [src]="previewPhotoProfil" alt="Preview" />
-              <span class="preview-label">✓ Photo téléchargée</span>
-            </div>
+          <input type="file" id="photoProfil" hidden (change)="onPhotoChange($event,'photoProfil')" accept="image/*"/>
+          <label for="photoProfil" class="upload-button">📷 Choisir une photo</label>
+          <div class="photo-preview" *ngIf="previewPhotoProfil">
+            <img [src]="previewPhotoProfil" alt="Preview"/>
+            <span class="preview-label">✓ Photo téléchargée</span>
           </div>
         </div>
       </div>
-      
-      <!-- Bouton submit -->
-      <button 
-        type="submit" 
-        class="btn-submit" 
-        [disabled]="isLoading"
-      >
-        <span *ngIf="!isLoading">S'inscrire</span>
-        <span *ngIf="isLoading">Inscription en cours...</span>
-      </button>
-      
+
+      <!-- Étape 3 : Vérification & Finalisation -->
+      <div *ngIf="currentStep === 3" class="form-section">
+        <h3 class="section-title">Vérification & Finalisation</h3>
+        <p>Merci de vérifier vos informations avant de soumettre :</p>
+        <ul>
+          <li><strong>Nom :</strong> {{ user.nom }}</li>
+          <li><strong>Prénom :</strong> {{ user.prenom }}</li>
+          <li><strong>Email :</strong> {{ user.email }}</li>
+          <li><strong>CIN :</strong> {{ user.cin }}</li>
+          <li><strong>Carte Étudiant :</strong> {{ user.carteEtudiant }}</li>
+        </ul>
+        <p>Les photos ont été téléchargées avec succès.</p>
+      </div>
+
+      <!-- Boutons -->
+    <button type="button" class="btn-submit" (click)="nextStep()" [disabled]="isLoading">
+  <span *ngIf="currentStep < 3">Suivant</span>
+  <span *ngIf="currentStep === 3">Soumettre</span>
+</button>
+
     </form>
     
     <!-- Lien connexion -->

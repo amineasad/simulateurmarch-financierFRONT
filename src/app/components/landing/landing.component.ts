@@ -12,8 +12,8 @@ export class LandingComponent {
 
   constructor(private router: Router) {}
 
-  goToSignupChoice(): void {
-    this.router.navigate(['/signup-choice']);
+   goToRegister(): void {
+    this.router.navigate(['/open-account']);
   }
 
   goToLogin(): void {

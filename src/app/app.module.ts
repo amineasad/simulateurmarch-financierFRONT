@@ -26,6 +26,8 @@ import { SignupChoiceComponent } from './components/signup-choice/signup-choice.
 import { SignupStudentComponent } from './components/signup-student/signup-student.component';
 import { SignupIndividualComponent } from './components/signup-individual/signup-individual.component';
 import { SignupCompanyComponent } from './components/signup-company/signup-company.component';
+import { AccountOpeningIntroComponent } from './components/account-opening-intro/account-opening-intro.component';
+
 
 @NgModule({
   declarations: [
@@ -44,7 +46,9 @@ LobbyComponent,
     SignupChoiceComponent,
     SignupStudentComponent,
     SignupIndividualComponent,
-    SignupCompanyComponent // ← Ajout
+    SignupCompanyComponent,
+    AccountOpeningIntroComponent,
+    // ← Ajout
   ],
   imports: [
     BrowserModule,
