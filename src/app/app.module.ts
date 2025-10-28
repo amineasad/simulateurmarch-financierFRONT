@@ -9,8 +9,9 @@ import { AppComponent } from './app.component';
 import { TradingRoomComponent } from './components/trading-room/trading-room.component';
 import { PriceChartComponent } from './components/price-chart/price-chart.component';
 import { GameLobbyComponent } from './components/game-lobby/game-lobby.component';
-import { GameRoomComponent } from './components/game-room/game-room.component'; // ← Ajout
+import { GameRoomComponent } from './components/game-room/game-room.component'; // ← a supprimer
 import { LobbyComponent } from './components/gamingroom/lobby.component';
+import { GamingRoomComponent } from './components/gamingroom/gaming-room.component';
 
 // Services
 import { WebsocketService } from './services/websocket.service';
@@ -34,10 +35,11 @@ import { AccountOpeningIntroComponent } from './components/account-opening-intro
     AppComponent,
     TradingRoomComponent,
     PriceChartComponent,
-    GameLobbyComponent,
-    GameRoomComponent,
+    GameLobbyComponent,//← a supprimer
+    GameRoomComponent,//← a supprimer
     LoginComponent,
 LobbyComponent,
+GamingRoomComponent,
     WalletManagementComponent,
     SuccessComponent,
     OrdersComponent,

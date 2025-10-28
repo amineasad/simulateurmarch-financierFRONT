@@ -105,7 +105,7 @@ export class LobbyComponent implements OnInit {
     this.sessionService.joinSession(session.id, this.currentUser.id).subscribe({
       next: () => {
         console.log('✅ Session rejointe');
-        this.router.navigate(['/gaming-room', session.id]);
+        this.router.navigate(['/gamingroom', session.id]);
       },
       error: (error) => {
         console.error('❌ Erreur:', error);

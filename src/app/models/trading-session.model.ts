@@ -67,6 +67,7 @@ export interface MarketEvent {
   impactsJson?: string;
   impactGlobal?: number;
   dureeMinutes?: number;
+  impacts?: { [symbol: string]: number }; 
 }
 
 export enum OrderType {
