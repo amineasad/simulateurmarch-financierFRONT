@@ -8,8 +8,8 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { TradingRoomComponent } from './components/trading-room/trading-room.component';
 import { PriceChartComponent } from './components/price-chart/price-chart.component';
-import { GameLobbyComponent } from './components/game-lobby/game-lobby.component';
-import { GameRoomComponent } from './components/game-room/game-room.component'; // ← a supprimer
+
+
 import { LobbyComponent } from './components/gamingroom/lobby.component';
 import { GamingRoomComponent } from './components/gamingroom/gaming-room.component';
 
@@ -35,8 +35,8 @@ import { AccountOpeningIntroComponent } from './components/account-opening-intro
     AppComponent,
     TradingRoomComponent,
     PriceChartComponent,
-    GameLobbyComponent,//← a supprimer
-    GameRoomComponent,//← a supprimer
+   
+    
     LoginComponent,
 LobbyComponent,
 GamingRoomComponent,

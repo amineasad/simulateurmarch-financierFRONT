@@ -1,207 +1,210 @@
-// src/app/services/trading.service.ts
-
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { Asset, Position, OrderBook } from '../models/market.model';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class TradingService {
-  private readonly API_URL = 'http://localhost:8080/api';
+  // ====== API externes ======
+  private readonly FINNHUB_API = 'https://finnhub.io/api/v1/quote';
+  private readonly FINNHUB_KEY = 'd44hgdpr01qt371v3oe0d44hgdpr01qt371v3oeg'; // ⬅️ remplace par ta clé Finnhub
+  private readonly API_URL = 'http://localhost:8080/api'; // (backend perso si besoin)
 
-  // États observables
+  // ====== États observables ======
   private assets$ = new BehaviorSubject<Asset[]>([]);
-  private portfolio$ = new BehaviorSubject<Position[]>([]); // ✅ VIDÉ
+  private portfolio$ = new BehaviorSubject<Position[]>([]);
   private cash$ = new BehaviorSubject<number>(100000);
   private selectedAsset$ = new BehaviorSubject<string>('AAPL');
 
   constructor(private http: HttpClient) {
-    this.loadInitialData();
+    this.loadInitialData();    // charge la watchlist (sans prix)
+    this.startRealtimeSync();  // met à jour les prix en continu
   }
 
-  /**
-   * Charger les données initiales depuis le backend
-   */
+  // -------------------------------------------------------------
+  // Initialisation
+  // -------------------------------------------------------------
+  /** Charge les symboles à suivre + récupère immédiatement leurs prix réels */
   private loadInitialData(): void {
-    // MODE MOCK : Charger directement les données simulées
-    this.loadMockData();
-    
-    // Pas d'appel HTTP pour l'instant
-    // Les appels HTTP seront activés quand le backend sera prêt
+    const symbols = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'META'];
+
+    const assets: Asset[] = symbols.map(symbol => ({
+      symbol,
+      name: this.getCompanyName(symbol),
+      price: 0,
+      change: 0,   // variation %
+      volume: '',  // optionnel
+      bid: 0,
+      ask: 0
+    }));
+
+    this.assets$.next(assets);
+
+    // Charger une première fois les prix réels
+    symbols.forEach(s => this.fetchRealPrice(s));
   }
 
-  /**
-   * Données mock pour le développement (avant que le backend soit prêt)
-   */
-  private loadMockData(): void {
-    const mockAssets: Asset[] = [
-      { symbol: 'AAPL', name: 'Apple Inc.', price: 178.50, change: 2.34, volume: '45.2M', bid: 178.48, ask: 178.52 },
-      { symbol: 'MSFT', name: 'Microsoft', price: 412.80, change: -1.20, volume: '23.1M', bid: 412.75, ask: 412.85 },
-      { symbol: 'GOOGL', name: 'Alphabet', price: 142.15, change: 0.85, volume: '18.9M', bid: 142.10, ask: 142.20 },
-      { symbol: 'TSLA', name: 'Tesla Inc.', price: 238.45, change: -3.12, volume: '89.4M', bid: 238.40, ask: 238.50 },
-      { symbol: 'AMZN', name: 'Amazon', price: 178.90, change: 1.65, volume: '34.2M', bid: 178.85, ask: 178.95 },
-      { symbol: 'META', name: 'Meta', price: 485.20, change: 2.89, volume: '12.7M', bid: 485.15, ask: 485.25 }
-    ];
-
-    // ✅ PORTFOLIO VIDÉ - Suppression des positions simulées
-    const mockPortfolio: Position[] = [
-      // ❌ TOUT SUPPRIMÉ
-      /*
-      { symbol: 'AAPL', quantity: 150, avgPrice: 165.20, currentPrice: 178.50 },
-      { symbol: 'MSFT', quantity: 80, avgPrice: 380.50, currentPrice: 412.80 },
-      { symbol: 'GOOGL', quantity: 200, avgPrice: 138.00, currentPrice: 142.15 }
-      */
-    ];
-
-    this.assets$.next(mockAssets);
-    this.portfolio$.next(mockPortfolio); // Tableau vide
-  }
-
-  /**
-   * Mettre à jour le prix d'un asset
-   */
-  updateAssetPrice(symbol: string, newPrice: number, change: number): void {
-    const currentAssets = this.assets$.value;
-    const updatedAssets = currentAssets.map(asset => 
-      asset.symbol === symbol 
-        ? { ...asset, price: newPrice, change: change }
-        : asset
-    );
-    this.assets$.next(updatedAssets);
-
-    // Mettre à jour aussi le portfolio
-    this.updatePortfolioPrices(symbol, newPrice);
-  }
-
-  /**
-   * Mettre à jour les prix dans le portfolio
-   */
-  private updatePortfolioPrices(symbol: string, newPrice: number): void {
-    const currentPortfolio = this.portfolio$.value;
-    const updatedPortfolio = currentPortfolio.map(position =>
-      position.symbol === symbol
-        ? { ...position, currentPrice: newPrice }
-        : position
-    );
-    this.portfolio$.next(updatedPortfolio);
-  }
-
-  /**
-   * Ajouter une position au portfolio
-   */
-  addPosition(symbol: string, quantity: number, price: number): void {
-    const currentPortfolio = this.portfolio$.value;
-    const existingPosition = currentPortfolio.find(p => p.symbol === symbol);
-
-    if (existingPosition) {
-      // Mise à jour position existante
-      const totalQuantity = existingPosition.quantity + quantity;
-      const newAvgPrice = 
-        ((existingPosition.avgPrice * existingPosition.quantity) + (price * quantity)) / totalQuantity;
-      
-      const updatedPortfolio = currentPortfolio.map(p =>
-        p.symbol === symbol
-          ? { ...p, quantity: totalQuantity, avgPrice: newAvgPrice }
-          : p
-      );
-      this.portfolio$.next(updatedPortfolio);
-    } else {
-      // Nouvelle position
-      const asset = this.getAsset(symbol);
-      const newPosition: Position = {
-        symbol: symbol,
-        quantity: quantity,
-        avgPrice: price,
-        currentPrice: asset?.price || price
-      };
-      this.portfolio$.next([...currentPortfolio, newPosition]);
+  /** Associe le nom société au ticker */
+  private getCompanyName(symbol: string): string {
+    switch (symbol) {
+      case 'AAPL': return 'Apple Inc.';
+      case 'MSFT': return 'Microsoft';
+      case 'GOOGL': return 'Alphabet';
+      case 'TSLA': return 'Tesla Inc.';
+      case 'AMZN': return 'Amazon';
+      case 'META': return 'Meta';
+      default: return symbol;
     }
   }
 
+  // -------------------------------------------------------------
+  // Prix réels (Finnhub)
+  // -------------------------------------------------------------
+  /** Récupère le prix courant via Finnhub puis met à jour l’asset */
+  fetchRealPrice(symbol: string): void {
+    this.http.get<any>(`${this.FINNHUB_API}?symbol=${symbol}&token=${this.FINNHUB_KEY}`)
+      .subscribe({
+        next: (data) => {
+          if (!data || data.c == null || data.pc == null) return;
+
+          const price = Number(data.c);
+          const prevClose = Number(data.pc);
+          const changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
+
+          // Optionnel: bid/ask/mock volume (car Finnhub/quote ne les fournit pas ici)
+          const bid = price - 0.02;
+          const ask = price + 0.02;
+
+          this.updateAssetPrice(symbol, price, changePct, bid, ask, '—');
+        },
+        error: (err) => console.error(`Erreur Finnhub pour ${symbol}:`, err)
+      });
+  }
+
+  /** Rafraîchit tous les prix toutes les 5s */
+  startRealtimeSync(): void {
+    setInterval(() => {
+      const list = this.assets$.value;
+      list.forEach(a => this.fetchRealPrice(a.symbol));
+    }, 5000);
+  }
+
+  // -------------------------------------------------------------
+  // Mises à jour locales
+  // -------------------------------------------------------------
   /**
-   * Retirer une position du portfolio
+   * Met à jour un asset dans la watchlist et aligne les positions (currentPrice)
+   * @param change : variation % (pas en valeur absolue)
    */
-  removePosition(symbol: string, quantity: number): void {
-    const currentPortfolio = this.portfolio$.value;
-    const updatedPortfolio = currentPortfolio
-      .map(p => p.symbol === symbol ? { ...p, quantity: p.quantity - quantity } : p)
-      .filter(p => p.quantity > 0);
-    
+  updateAssetPrice(
+    symbol: string,
+    newPrice: number,
+    change: number,
+    bid?: number,
+    ask?: number,
+    volume?: string
+  ): void {
+    const updated = this.assets$.value.map(a => {
+      if (a.symbol !== symbol) return a;
+      return {
+        ...a,
+        price: newPrice,
+        change,
+        bid: bid ?? a.bid,
+        ask: ask ?? a.ask,
+        volume: volume ?? a.volume
+      };
+    });
+    this.assets$.next(updated);
+
+    // Aligner les positions sur le dernier prix
+    const updatedPortfolio = this.portfolio$.value.map(p =>
+      p.symbol === symbol ? { ...p, currentPrice: newPrice } : p
+    );
     this.portfolio$.next(updatedPortfolio);
   }
 
-  /**
-   * Mettre à jour le cash
-   */
-  updateCash(amount: number): void {
-    this.cash$.next(this.cash$.value + amount);
+  // -------------------------------------------------------------
+  // Portefeuille (utilisé par trading-room + portfolio)
+  // -------------------------------------------------------------
+  /** Ajoute/renforce une position (prix moyen recalculé) */
+  addPosition(symbol: string, quantity: number, price: number): void {
+    const current = this.portfolio$.value;
+    const existing = current.find(p => p.symbol === symbol);
+
+    if (existing) {
+      const newQty = existing.quantity + quantity;
+      const newAvg =
+        ((existing.avgPrice * existing.quantity) + (price * quantity)) / newQty;
+
+      const next = current.map(p =>
+        p.symbol === symbol
+          ? { ...p, quantity: newQty, avgPrice: newAvg, currentPrice: price }
+          : p
+      );
+      this.portfolio$.next(next);
+    } else {
+      const newPos: Position = {
+        symbol,
+        quantity,
+        avgPrice: price,
+        currentPrice: price
+      };
+      this.portfolio$.next([...current, newPos]);
+    }
   }
 
-  /**
-   * Sélectionner un asset
-   */
-  selectAsset(symbol: string): void {
-    this.selectedAsset$.next(symbol);
+  /** Réduit/ferme une position */
+  removePosition(symbol: string, quantity: number): void {
+    const next = this.portfolio$.value
+      .map(p => p.symbol === symbol ? { ...p, quantity: p.quantity - quantity } : p)
+      .filter(p => p.quantity > 0);
+    this.portfolio$.next(next);
   }
 
-  /**
-   * Getters pour les observables
-   */
-  getAssets(): Observable<Asset[]> {
-    return this.assets$.asObservable();
-  }
-
-  getPortfolio(): Observable<Position[]> {
-    return this.portfolio$.asObservable();
-  }
-
-  getCash(): Observable<number> {
-    return this.cash$.asObservable();
-  }
-
-  getSelectedAsset(): Observable<string> {
-    return this.selectedAsset$.asObservable();
-  }
-
-  /**
-   * Getters pour les valeurs actuelles
-   */
-  getAsset(symbol: string): Asset | undefined {
-    return this.assets$.value.find(a => a.symbol === symbol);
-  }
-
-  getCurrentCash(): number {
-    return this.cash$.value;
-  }
-
+  /** Renvoie la position pour un symbole (ou undefined) */
   getPosition(symbol: string): Position | undefined {
     return this.portfolio$.value.find(p => p.symbol === symbol);
   }
 
-  /**
-   * Calculer la valeur totale du portfolio
-   */
+  /** Valeur totale (positions uniquement, sans le cash) */
   getTotalPortfolioValue(): number {
-    return this.portfolio$.value.reduce((sum, position) => 
-      sum + (position.quantity * position.currentPrice), 0
-    );
+    return this.portfolio$.value.reduce((sum, p) => sum + p.quantity * p.currentPrice, 0);
   }
 
-  /**
-   * Calculer le P&L total
-   */
+  /** PnL total (somme des PnL de chaque position) */
   getTotalPnL(): number {
-    return this.portfolio$.value.reduce((sum, position) => 
-      sum + (position.quantity * (position.currentPrice - position.avgPrice)), 0
+    return this.portfolio$.value.reduce(
+      (sum, p) => sum + p.quantity * (p.currentPrice - p.avgPrice),
+      0
     );
   }
 
-  /**
-   * Récupérer le carnet d'ordres pour un symbole
-   */
+  // -------------------------------------------------------------
+  // Getters observables
+  // -------------------------------------------------------------
+  getAssets(): Observable<Asset[]> { return this.assets$.asObservable(); }
+  getPortfolio(): Observable<Position[]> { return this.portfolio$.asObservable(); }
+  getCash(): Observable<number> { return this.cash$.asObservable(); }
+
+  // Sélection de l’asset courant (watchlist → graphique)
+  getSelectedAsset(): Observable<string> { return this.selectedAsset$.asObservable(); }
+  selectAsset(symbol: string): void { this.selectedAsset$.next(symbol); }
+
+  // -------------------------------------------------------------
+  // Divers (backend perso)
+  // -------------------------------------------------------------
+  getAsset(symbol: string): Asset | undefined {
+    return this.assets$.value.find(a => a.symbol === symbol);
+  }
+
   getOrderBook(symbol: string): Observable<OrderBook> {
+    // Adapter si ton backend renvoie un carnet
     return this.http.get<OrderBook>(`${this.API_URL}/orderbook/${symbol}`);
   }
+
+  // Stubs optionnels si tu veux brancher tes ordres PENDING depuis le portfolio
+  // (tu peux les brancher plus tard et appeler ces méthodes dans PortfolioComponent)
+  // getPendingOrders(userId: number): Observable<any[]> { return of([]); }
+  // cancelOrder(orderId: number): Observable<void> { return of(void 0); }
 }

@@ -119,17 +119,18 @@ export class TradingSessionService {
 
   // ==================== ÉVÉNEMENTS ====================
 
-  createEvent(event: MarketEvent): Observable<MarketEvent> {
-    return this.http.post<MarketEvent>(`${this.API_URL}/events`, event);
-  }
+  createEvent(event: any): Observable<MarketEvent> {
+  return this.http.post<MarketEvent>(`${this.API_URL}/events`, event);
+}
+
 
   getSessionEvents(sessionId: number): Observable<MarketEvent[]> {
     return this.http.get<MarketEvent[]>(`${this.API_URL}/events/session/${sessionId}`);
   }
 
-  triggerEvent(eventId: number): Observable<MarketEvent> {
-    return this.http.post<MarketEvent>(`${this.API_URL}/events/${eventId}/trigger`, {});
-  }
+triggerEvent(eventId: number): Observable<void> {
+  return this.http.post<void>(`${this.API_URL}/events/${eventId}/trigger`, {});
+}
 
   checkScheduledEvents(sessionId: number): Observable<MarketEvent[]> {
     return this.http.post<MarketEvent[]>(`${this.API_URL}/events/session/${sessionId}/check-scheduled`, {});

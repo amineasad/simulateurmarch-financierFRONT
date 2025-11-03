@@ -9,8 +9,7 @@ import { OrdersComponent } from './components/orders/orders.component';
 import { PortfolioComponent } from './components/portfolio/portfolio.component';
 
 // Composants de jeu
-import { GameLobbyComponent } from './components/game-lobby/game-lobby.component';//a supprimer
-import { GameRoomComponent } from './components/game-room/game-room.component';//a supprimer
+
 import { LobbyComponent } from './components/gamingroom/lobby.component';
 import { GamingRoomComponent } from './components/gamingroom/gaming-room.component';
 // Composants d'authentification
@@ -49,8 +48,8 @@ const routes: Routes = [
   { path: 'signup/individual', component: SignupIndividualComponent },
   
   // Lobby et jeu
-  { path: 'lobby1', component: GameLobbyComponent },//← a supprimer
-  { path: 'game-room/:id', component: GameRoomComponent },//← a supprimer
+  
+  
   { path: 'lobby', component: LobbyComponent },
   { path: 'gamingroom/:id', component: GamingRoomComponent},
   
