@@ -1,25 +1,19 @@
 // src/app/components/gaming-room/gaming-room.component.ts
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { interval, Subscription } from 'rxjs';
-import * as SockJS from 'sockjs-client';
-import { Client } from '@stomp/stompjs';
-
+import { Subscription, interval } from 'rxjs';
 import { TradingSessionService } from '../../services/trading-session.service';
 import { AuthService } from '../../services/auth.service';
-
 import {
   TradingSession,
   SessionParticipation,
-  MarketEvent,
   SessionOrder,
   SessionStatus,
   OrderSide,
   OrderStatus,
-  OrderType,
-  EventType,
-  EventSeverity
+  OrderType
 } from '../../models/trading-session.model';
+import { MarketDataService, Quote } from '../../services/market-data.service';
 
 interface StockData {
   price: number;
@@ -33,77 +27,44 @@ interface StockData {
   styleUrls: ['./gaming-room.component.css']
 })
 export class GamingRoomComponent implements OnInit, OnDestroy {
-  // ===== Enums exposés pour le template =====
+  // ==== Enums exposés au template ====
   SessionStatus = SessionStatus;
   OrderSide = OrderSide;
   OrderType = OrderType;
-  EventType = EventType;
-  EventSeverity = EventSeverity;
 
-  // ===== Session et données =====
+  // ==== Session ====
   sessionId!: number;
   session: TradingSession | null = null;
   currentUser: any;
   myParticipation: SessionParticipation | null = null;
 
-  participants: SessionParticipation[] = [];
-  leaderboard: SessionParticipation[] = [];
-  onlineCount = 0;
-
-  events: MarketEvent[] = [];
-  activeEvents: MarketEvent[] = [];
-  orders: SessionOrder[] = [];
-  activityFeed: SessionOrder[] = [];
-
-  // ===== WebSocket =====
-  private stompClient?: Client;
-  private isConnected = false;
-
-  // ===== Timer =====
+  // ==== Timer (simple pour commencer) ====
   timeRemaining = '--:--';
   sessionProgress = 0;
   isPaused = false;
-  private timerSubscription?: Subscription;
+  private timerSub?: Subscription;
 
-  // ===== Trading =====
+  // ==== Marché ====
+  symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'];
+  marketData: Record<string, StockData> = {};
+  private quotesSub?: Subscription;
+
+  // ==== Trading (form) ====
   selectedSymbol = 'AAPL';
   orderType: OrderType = OrderType.MARKET;
   orderSide: OrderSide = OrderSide.BUY;
   orderQuantity = 10;
   orderPrice = 0;
 
-  // ===== Marché (provisoirement simulé) =====
-  marketData: Record<string, StockData> = {
-    AAPL: { price: 175.43, change: 2.35, changePercent: 1.36 },
-    MSFT: { price: 378.85, change: -3.12, changePercent: -0.82 },
-    GOOGL: { price: 139.75, change: 1.89, changePercent: 1.37 },
-    AMZN: { price: 145.32, change: -2.45, changePercent: -1.66 },
-    TSLA: { price: 238.45, change: 5.67, changePercent: 2.44 }
-  };
-
-  // ===== Chat =====
-  chatMessages: Array<{ user: string; message: string; time: string }> = [];
-  newMessage = '';
-
-  // ===== Admin =====
-  isAdmin = false;
-  showEventModal = false;
-  newEvent: MarketEvent = {
-    sessionId: 0,
-    type: EventType.ANNONCE_ECONOMIQUE,
-    severite: EventSeverity.MEDIUM,
-    titre: '',
-    description: '',
-    declenchementPrevu: '',
-    declenche: false,
-    impacts: {}
-  };
+  // ==== Feed simple ====
+  activityFeed: Array<{text:string,time:string}> = [];
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
+    public router: Router,
     private sessionService: TradingSessionService,
-    private authService: AuthService
+    private authService: AuthService,
+    private marketDataService: MarketDataService
   ) {}
 
   ngOnInit(): void {
@@ -113,191 +74,55 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Route
     this.route.params.subscribe(params => {
       this.sessionId = +params['id'];
       this.loadSession();
-      this.connectWebSocket();
-      this.startTimer();
+    });
+
+    // Prix live
+    this.marketDataService.startPolling(this.symbols, 5000);
+    this.quotesSub = this.marketDataService.streamQuotes().subscribe((map: Record<string, Quote>) => {
+      for (const s of this.symbols) {
+        const q = map[s];
+        if (!q) continue;
+        this.marketData[s] = {
+          price: q.price,
+          change: q.change,
+          changePercent: q.changePercent
+        };
+      }
+      // maintiens le prix dans le formulaire
+      this.orderPrice = this.marketData[this.selectedSymbol]?.price || this.orderPrice;
     });
   }
 
   ngOnDestroy(): void {
-    this.timerSubscription?.unsubscribe();
-    this.disconnectWebSocket();
+    this.timerSub?.unsubscribe();
+    this.quotesSub?.unsubscribe();
+    this.marketDataService.stopPolling();
   }
 
-  // ========== Utils ==========
-  private pad(n: number): string {
-    return n.toString().padStart(2, '0');
-  }
-
-  /** LocalDateTime string attendu par Spring (sans 'Z'): yyyy-MM-ddTHH:mm:ss */
-  private toLocalDateTimeString(d: Date): string {
-    return `${d.getFullYear()}-${this.pad(d.getMonth() + 1)}-${this.pad(d.getDate())}T${this.pad(d.getHours())}:${this.pad(d.getMinutes())}:${this.pad(d.getSeconds())}`;
-  }
-
-  // ===== Chargement initial =====
+  // ====== Session & Timer simple ======
   loadSession(): void {
     this.sessionService.getSessionById(this.sessionId).subscribe({
-      next: s => {
+      next: (s) => {
         this.session = s;
-        this.isAdmin = s.createurId === this.currentUser.id;
-        this.loadParticipants();
-        this.loadEvents();
-        this.loadOrders();
+        // participation
+        this.sessionService.getParticipation(this.sessionId, this.currentUser.id)
+          .subscribe({ next: p => this.myParticipation = p });
+
+        // timer UI (1 Hz)
+        this.timerSub = interval(1000).subscribe(() => this.updateTimer());
+      },
+      error: (e) => {
+        console.error('Session load KO', e);
+        this.router.navigate(['/lobby']);
       }
     });
-
-    this.sessionService
-      .getParticipation(this.sessionId, this.currentUser.id)
-      .subscribe({ next: p => (this.myParticipation = p) });
   }
 
-  loadParticipants(): void {
-    this.sessionService.getParticipants(this.sessionId).subscribe(p => {
-      this.participants = p;
-      this.onlineCount = p.filter(x => x.connecte).length;
-    });
-    this.sessionService.getLeaderboard(this.sessionId).subscribe(l => (this.leaderboard = l));
-  }
-
-  loadEvents(): void {
-    this.sessionService.getSessionEvents(this.sessionId).subscribe(e => {
-      this.events = e;
-      this.activeEvents = e.filter(ev => !ev.declenche);
-    });
-  }
-
-  loadOrders(): void {
-    this.sessionService
-      .getActivityFeed(this.sessionId)
-      .subscribe(a => (this.activityFeed = a.slice(0, 10)));
-    this.sessionService
-      .getUserOrders(this.sessionId, this.currentUser.id)
-      .subscribe(o => (this.orders = o));
-  }
-
-  // ===== WebSocket =====
-  connectWebSocket(): void {
-    const socket = new SockJS('http://localhost:9090/examen/ws-trading');
-    this.stompClient = new Client({
-      webSocketFactory: () => socket as any,
-      reconnectDelay: 5000,
-      debug: str => console.log('[STOMP]', str)
-    });
-
-    this.stompClient.onConnect = frame => {
-      console.log('✅ STOMP Connected:', frame);
-      this.isConnected = true;
-      this.sendConnectionStatus(true);
-      this.subscribeToUpdates();
-    };
-
-    this.stompClient.onStompError = frame => {
-      console.error('❌ STOMP Error:', frame);
-    };
-
-    this.stompClient.activate();
-  }
-
-  subscribeToUpdates(): void {
-    if (!this.stompClient) return;
-    const topicBase = `/topic/session/${this.sessionId}`;
-    this.stompClient.subscribe(`${topicBase}/updates`, msg =>
-      this.handleSessionUpdate(JSON.parse(msg.body))
-    );
-    this.stompClient.subscribe(`${topicBase}/market`, msg =>
-      this.handleMarketUpdate(JSON.parse(msg.body))
-    );
-    this.stompClient.subscribe(`${topicBase}/orders`, msg =>
-      this.handleOrderUpdate(JSON.parse(msg.body))
-    );
-    this.stompClient.subscribe(`${topicBase}/chat`, msg =>
-      this.chatMessages.push(JSON.parse(msg.body))
-    );
-    this.stompClient.subscribe(`${topicBase}/events`, msg =>
-      this.handleEventTrigger(JSON.parse(msg.body))
-    );
-    this.stompClient.subscribe(`${topicBase}/participants`, () => this.loadParticipants());
-  }
-
-  disconnectWebSocket(): void {
-    if (this.stompClient && this.isConnected) {
-      this.sendConnectionStatus(false);
-      this.stompClient.deactivate();
-      this.isConnected = false;
-    }
-  }
-
-  sendConnectionStatus(connected: boolean): void {
-    if (this.stompClient && this.isConnected) {
-      this.stompClient.publish({
-        destination: `/app/session/${this.sessionId}/connection`,
-        body: JSON.stringify({ userId: this.currentUser.id, connected })
-      });
-    }
-  }
-
-  // ===== Handlers WebSocket =====
-  handleSessionUpdate(update: any): void {
-    if (update.status && this.session) {
-      this.session.status = update.status;
-      this.isPaused = update.status === SessionStatus.PAUSED;
-    }
-  }
-
-  handleMarketUpdate(update: any): void {
-    if (update.symbol && update.price) {
-      const prev = this.marketData[update.symbol];
-      const pct =
-        prev && prev.price ? ((update.price - prev.price) / prev.price) * 100 : 0;
-      this.marketData[update.symbol] = {
-        price: update.price,
-        change: pct,
-        changePercent: pct
-      };
-      if (this.selectedSymbol === update.symbol) {
-        this.orderPrice = update.price;
-      }
-    }
-  }
-
-  handleOrderUpdate(order: SessionOrder): void {
-    this.activityFeed.unshift(order);
-    this.activityFeed = this.activityFeed.slice(0, 10);
-    this.loadParticipants();
-  }
-
-  handleEventTrigger(event: MarketEvent): void {
-    this.showEventAlert(event);
-    if (event.impacts) {
-      Object.keys(event.impacts).forEach(symbol => {
-        const impact = event.impacts![symbol];
-        const current = this.marketData[symbol];
-        if (current) {
-          const newPrice = current.price * (1 + impact);
-          const pct = impact * 100;
-          this.marketData[symbol] = {
-            price: newPrice,
-            change: pct,
-            changePercent: pct
-          };
-          if (this.selectedSymbol === symbol) {
-            this.orderPrice = newPrice;
-          }
-        }
-      });
-    }
-  }
-
-  // ===== Timer =====
-  startTimer(): void {
-    this.timerSubscription = interval(1000).subscribe(() => {
-      if (this.session && !this.isPaused) this.updateTimer();
-    });
-  }
-
-  updateTimer(): void {
+  private updateTimer(): void {
     if (!this.session) return;
     const now = new Date();
     const start = new Date(this.session.heureDebut);
@@ -318,21 +143,25 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
     }
   }
 
-  formatTime(ms: number): string {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  private formatTime(ms: number): string {
+    const m = Math.floor(ms / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+  // ====== Trading ======
+  selectSymbol(sym: string): void {
+    this.selectedSymbol = sym;
+    this.marketDataService.trackSymbol(sym);
+    this.orderPrice = this.marketData[sym]?.price || 0;
   }
 
-  // ===== Trading =====
   placeOrder(): void {
     if (!this.session || this.session.status !== SessionStatus.OPEN) {
       alert('Session non ouverte');
       return;
     }
-
     const last = this.marketData[this.selectedSymbol]?.price ?? 0;
-
     const order: SessionOrder = {
       sessionId: this.sessionId,
       userId: this.currentUser.id,
@@ -343,121 +172,19 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
       price: this.orderType === OrderType.LIMIT ? this.orderPrice : last,
       status: OrderStatus.PENDING
     };
-
-    if (this.stompClient && this.isConnected) {
-      this.stompClient.publish({
-        destination: `/app/session/${this.sessionId}/order`,
-        body: JSON.stringify(order)
-      });
-    } else {
-      this.sessionService.placeOrder(order).subscribe({
-        next: r => console.log('Ordre placé', r),
-        error: e => alert('Erreur ordre')
-      });
-    }
-  }
-
-  selectSymbol(symbol: string): void {
-    this.selectedSymbol = symbol;
-    this.orderPrice = this.marketData[symbol]?.price || 0;
-  }
-
-  // ===== Chat =====
-  sendChatMessage(): void {
-    if (!this.newMessage.trim()) return;
-    const msg = {
-      user: this.currentUser.nom || 'Trader',
-      message: this.newMessage,
-      time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-    };
-    if (this.stompClient && this.isConnected) {
-      this.stompClient.publish({
-        destination: `/app/session/${this.sessionId}/chat`,
-        body: JSON.stringify(msg)
-      });
-    }
-    this.newMessage = '';
-  }
-
-  // ===== Admin =====
-  startSession(): void {
-    if (!this.isAdmin) return;
-    this.sessionService.startSession(this.sessionId).subscribe(s => (this.session = s));
-  }
-
-  pauseSession(): void {
-    if (!this.isAdmin) return;
-    this.sessionService.pauseSession(this.sessionId).subscribe(s => {
-      this.session = s;
-      this.isPaused = true;
-    });
-  }
-
-  resumeSession(): void {
-    if (!this.isAdmin) return;
-    this.sessionService.resumeSession(this.sessionId).subscribe(s => {
-      this.session = s;
-      this.isPaused = false;
-    });
-  }
-
-  closeSession(): void {
-    if (!this.isAdmin) return;
-    if (confirm('Terminer la session ?')) {
-      this.sessionService.closeSession(this.sessionId).subscribe(() => this.router.navigate(['/lobby']));
-    }
-  }
-
-  /** ✅ Correction 400: envoi d’un payload conforme au backend */
-  triggerEvent(): void {
-    if (!this.isAdmin) return;
-
-    const when = this.newEvent.declenchementPrevu
-      ? new Date(this.newEvent.declenchementPrevu)
-      : new Date();
-
-    const payload: any = {
-      session: { id: this.sessionId },                        // <<<<<< requis par MarketEventService
-      type: this.newEvent.type,
-      severite: this.newEvent.severite,
-      titre: this.newEvent.titre,
-      description: this.newEvent.description,
-      declenchementPrevu: this.toLocalDateTimeString(when),   // <<<<<< LocalDateTime sans 'Z'
-      declenche: false,
-      impacts: this.newEvent.impacts ?? {}
-    };
-
-    this.sessionService.createEvent(payload).subscribe({
-      next: (e) => {
-        // Déclenche immédiatement si voulu
-        this.sessionService.triggerEvent(e.id!).subscribe(() => {
-          this.showEventModal = false;
-          this.loadEvents();
+    // REST (sans WS pour l’instant)
+    this.sessionService.placeOrder(order).subscribe({
+      next: () => {
+        this.activityFeed.unshift({
+          text: `${this.orderSide === OrderSide.BUY ? 'Achat' : 'Vente'} ${order.quantity} ${order.symbol} @ ${order.price.toFixed(2)}`,
+          time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
         });
+        this.activityFeed = this.activityFeed.slice(0, 10);
       },
-      error: (err) => {
-        console.error('❌ Erreur création event:', err);
-        alert('Création événement invalide (vérifie session.id et le format date: yyyy-MM-ddTHH:mm:ss)');
+      error: (e) => {
+        console.error('Order KO', e);
+        alert('Erreur lors du passage d’ordre');
       }
     });
-  }
-
-  showEventAlert(event: MarketEvent): void {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'event-alert';
-    alertDiv.innerHTML = `<div class="event-alert-content"><h3>⚠️ ${event.titre}</h3><p>${event.description}</p></div>`;
-    document.body.appendChild(alertDiv);
-    setTimeout(() => alertDiv.remove(), 10000);
-  }
-
-  // ===== Navigation =====
-  leaveSession(): void {
-    if (confirm('Quitter la session ?')) {
-      this.disconnectWebSocket();
-      this.router.navigate(['/lobby']);
-    }
-  }
-  goToLobby(): void {
-    this.router.navigate(['/lobby']);
   }
 }

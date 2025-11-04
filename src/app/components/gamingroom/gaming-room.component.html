@@ -1,220 +1,113 @@
+<!-- src/app/components/gaming-room/gaming-room.component.html -->
 <div class="gaming-room" *ngIf="session">
-  <!-- ===== TOP BAR ===== -->
+  <!-- TOP BAR -->
   <div class="top-bar">
-    <div class="top-bar-left">
-      <button class="btn-back" (click)="goToLobby()">
-        <i class="fas fa-arrow-left"></i> Retour au Lobby
-      </button>
-      <h1 class="session-name">{{ session.nom }}</h1>
-      <span class="session-code">Code: {{ session.codeAcces }}</span>
+    <div class="left">
+      <button class="btn" (click)="router.navigate(['/lobby'])">← Lobby</button>
+      <h1>{{ session.nom }}</h1>
+      <span class="code">Code: {{ session.codeAcces }}</span>
     </div>
-
-    <div class="top-bar-center">
-      <div class="timer-container">
-        <div class="timer-label">Temps restant</div>
-        <div class="timer-value">{{ timeRemaining }}</div>
-        <div class="timer-progress">
-          <div class="timer-progress-bar" [style.width.%]="sessionProgress"></div>
-        </div>
+    <div class="center">
+      <div class="timer">
+        <div class="label">Temps restant</div>
+        <div class="value">{{ timeRemaining }}</div>
+        <div class="bar"><div class="bar-fill" [style.width.%]="sessionProgress"></div></div>
       </div>
     </div>
-
-    <div class="top-bar-right">
-      <div class="online-status">
-        <i class="fas fa-users"></i> {{ onlineCount }} / {{ session.maxParticipants }}
-      </div>
-      <div class="my-balance" *ngIf="myParticipation">
-        <i class="fas fa-wallet"></i> {{ myParticipation.cashActuel | currency:'EUR':'symbol':'1.2-2' }}
-      </div>
-      <button class="btn-leave" (click)="leaveSession()">
-        <i class="fas fa-sign-out-alt"></i>
-      </button>
+    <div class="right">
+      <div class="balance" *ngIf="myParticipation">💰 {{ myParticipation.cashActuel | currency:'EUR':'symbol':'1.2-2' }}</div>
     </div>
   </div>
 
-  <!-- ===== ADMIN CONTROLS ===== -->
-  <div class="admin-bar" *ngIf="isAdmin">
-    <button class="btn-admin" (click)="startSession()" *ngIf="session.status === SessionStatus.WAITING">
-      <i class="fas fa-play"></i> Démarrer
-    </button>
-    <button class="btn-admin" (click)="pauseSession()" *ngIf="session.status === SessionStatus.OPEN && !isPaused">
-      <i class="fas fa-pause"></i> Pause
-    </button>
-    <button class="btn-admin" (click)="resumeSession()" *ngIf="isPaused">
-      <i class="fas fa-play"></i> Reprendre
-    </button>
-    <button class="btn-admin btn-danger" (click)="closeSession()">
-      <i class="fas fa-stop"></i> Terminer
-    </button>
-    <button class="btn-admin btn-event" (click)="showEventModal = true">
-      <i class="fas fa-bolt"></i> Déclencher Événement
-    </button>
-  </div>
-
-  <!-- ===== MAIN CONTENT ===== -->
-  <div class="main-content">
-    <!-- ===== LEFT SIDEBAR - Market + Trading ===== -->
-    <div class="sidebar-left">
-      <div class="market-panel">
-        <h3>Marché</h3>
-        <div class="market-list">
-          <div class="market-item"
-               *ngFor="let stock of marketData | keyvalue"
-               [class.selected]="selectedSymbol === stock.key"
-               (click)="selectSymbol(stock.key)">
-            <div class="stock-symbol">{{ stock.key }}</div>
-            <div class="stock-price">{{ stock.value.price | currency:'EUR':'':'1.2-2' }}</div>
-            <div class="stock-change" [class.positive]="stock.value.change > 0" [class.negative]="stock.value.change < 0">
-              <i class="fas" [class.fa-arrow-up]="stock.value.change>0" [class.fa-arrow-down]="stock.value.change<0"></i>
-              {{ stock.value.changePercent | number:'1.2-2' }}%
-            </div>
+  <div class="main">
+    <!-- WATCHLIST -->
+    <div class="watchlist">
+      <div class="panel-title">Marché</div>
+      <div class="rows">
+        <div class="row" *ngFor="let s of symbols"
+             [class.selected]="s===selectedSymbol"
+             (click)="selectSymbol(s)">
+          <div class="sym">{{ s }}</div>
+          <div class="px">{{ marketData[s]?.price | number:'1.2-2' }}</div>
+          <div class="chg" [class.pos]="(marketData[s]?.changePercent||0)>=0"
+               [class.neg]="(marketData[s]?.changePercent||0)<0">
+            {{ (marketData[s]?.changePercent || 0) | number:'1.2-2' }}%
           </div>
-        </div>
-      </div>
-
-      <div class="trading-panel">
-        <h3>Trading</h3>
-        <div class="trading-form">
-          <div class="symbol-display">
-            <span>{{ selectedSymbol }}</span>
-            <span class="current-price">{{ marketData[selectedSymbol]?.price | currency:'EUR':'':'1.2-2' }}</span>
-          </div>
-
-          <div class="order-type-buttons">
-            <button [class.active]="orderSide === OrderSide.BUY" (click)="orderSide = OrderSide.BUY" class="btn-buy">Acheter</button>
-            <button [class.active]="orderSide === OrderSide.SELL" (click)="orderSide = OrderSide.SELL" class="btn-sell">Vendre</button>
-          </div>
-
-          <div class="form-group">
-            <label>Type d'ordre</label>
-            <select [(ngModel)]="orderType">
-              <option [ngValue]="OrderType.MARKET">Marché</option>
-              <option [ngValue]="OrderType.LIMIT">Limite</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Quantité</label>
-            <input type="number" [(ngModel)]="orderQuantity" min="1">
-          </div>
-
-          <div class="form-group" *ngIf="orderType === OrderType.LIMIT">
-            <label>Prix limite</label>
-            <input type="number" [(ngModel)]="orderPrice" step="0.01">
-          </div>
-
-          <div class="order-summary">
-            <span>Total estimé:</span>
-            <span class="total-amount">
-             {{ (orderQuantity * (orderType===OrderType.LIMIT ? orderPrice : (marketData[selectedSymbol]?.price ?? 0))) | currency:'EUR':'symbol':'1.2-2' }}
-
-            </span>
-          </div>
-
-          <button class="btn-submit-order"
-                  [class.buy]="orderSide===OrderSide.BUY"
-                  [class.sell]="orderSide===OrderSide.SELL"
-                  (click)="placeOrder()"
-                  [disabled]="session.status !== SessionStatus.OPEN">
-            {{ orderSide===OrderSide.BUY?'Acheter':'Vendre' }} {{ orderQuantity }} {{ selectedSymbol }}
-          </button>
         </div>
       </div>
     </div>
 
-    <!-- ===== CENTER - Chart + Activity ===== -->
-    <div class="center-content">
-      <div class="chart-container">
+    <!-- CHART + FEED -->
+    <div class="center">
+      <div class="chart">
+        <!-- Si tu as déjà le TradingView chart -->
         <app-price-chart [symbol]="selectedSymbol"></app-price-chart>
+        <!-- Sinon, un placeholder:
+        <div class="placeholder">Chart {{selectedSymbol}}</div>
+        -->
       </div>
 
-      <div class="activity-feed">
-        <h3>Activité Récente</h3>
-        <div class="activity-list">
-          <div class="activity-item" *ngFor="let order of activityFeed">
-            <span class="activity-user">Trader {{ order.userId }}</span>
-            <span class="activity-action" [class.buy]="order.side===OrderSide.BUY" [class.sell]="order.side===OrderSide.SELL">
-              {{ order.side===OrderSide.BUY?'a acheté':'a vendu' }}
-            </span>
-            <span class="activity-details">
-              {{ order.quantity }} {{ order.symbol }} @ {{ order.price | currency:'EUR':'':'1.2-2' }}
-            </span>
-            <span class="activity-time">{{ order.executionTime | date:'HH:mm:ss' }}</span>
-          </div>
-          <div class="no-activity" *ngIf="activityFeed.length===0">Aucune activité récente</div>
+      <div class="feed">
+        <div class="panel-title">Activité récente</div>
+        <div *ngIf="activityFeed.length===0" class="empty">Aucune activité</div>
+        <div class="item" *ngFor="let it of activityFeed">
+          <span class="t">{{ it.time }}</span> — {{ it.text }}
         </div>
       </div>
     </div>
 
-    <!-- ===== RIGHT SIDEBAR - Leaderboard + Chat ===== -->
-    <div class="sidebar-right">
-      <div class="leaderboard-panel">
-        <h3>🏆 Classement</h3>
-        <div class="leaderboard-list">
-          <div class="leaderboard-item" *ngFor="let participant of leaderboard; let i = index" [class.me]="participant.userId===currentUser.id">
-            <span class="rank">{{ i+1 }}</span>
-            <span class="name">Trader {{ participant.userId }}</span>
-            <span class="performance" [class.positive]="participant.rendement>0" [class.negative]="participant.rendement<0">
-              {{ participant.rendement | number:'1.2-2' }}%
-            </span>
-          </div>
+    <!-- ORDER -->
+    <div class="order">
+      <div class="panel-title">Passer un ordre</div>
+
+      <div class="line">
+        <label>Symbole</label>
+        <div class="value">{{ selectedSymbol }}</div>
+      </div>
+
+      <div class="line">
+        <label>Type</label>
+        <select [(ngModel)]="orderType">
+          <option [ngValue]="OrderType.MARKET">Marché</option>
+          <option [ngValue]="OrderType.LIMIT">Limite</option>
+        </select>
+      </div>
+
+      <div class="line">
+        <label>Side</label>
+        <div class="toggle">
+          <button [class.active]="orderSide===OrderSide.BUY" (click)="orderSide=OrderSide.BUY">Acheter</button>
+          <button [class.active]="orderSide===OrderSide.SELL" (click)="orderSide=OrderSide.SELL">Vendre</button>
         </div>
       </div>
 
-      <div class="chat-panel">
-        <h3>💬 Chat</h3>
-        <div class="chat-messages">
-          <div class="chat-message" *ngFor="let msg of chatMessages">
-            <span class="chat-user">{{ msg.user }}:</span>
-            <span class="chat-text">{{ msg.message }}</span>
-            <span class="chat-time">{{ msg.time }}</span>
-          </div>
-        </div>
-        <div class="chat-input">
-          <input type="text" [(ngModel)]="newMessage" placeholder="Tapez votre message..." (keyup.enter)="sendChatMessage()">
-          <button (click)="sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
-        </div>
+      <div class="line">
+        <label>Quantité</label>
+        <input type="number" min="1" [(ngModel)]="orderQuantity">
       </div>
-    </div>
-  </div>
 
-  <!-- ===== EVENT MODAL ===== -->
-  <div class="modal" *ngIf="showEventModal && isAdmin">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Déclencher un Événement</h2>
-        <button class="modal-close" (click)="showEventModal=false">×</button>
+      <div class="line" *ngIf="orderType===OrderType.LIMIT">
+        <label>Prix limite</label>
+        <input type="number" step="0.01" [(ngModel)]="orderPrice">
       </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Type d'événement</label>
-          <select [(ngModel)]="newEvent.type">
-            <option [ngValue]="EventType.CRISE_FINANCIERE">💥 Crise Financière</option>
-            <option [ngValue]="EventType.ANNONCE_ECONOMIQUE">📢 Annonce Économique</option>
-            <option [ngValue]="EventType.BULLE_SPECULATIVE">📈 Bulle Spéculative</option>
-            <option [ngValue]="EventType.EVENEMENT_SECTORIEL">🏭 Événement Sectoriel</option>
-            <option [ngValue]="EventType.GEOPOLITIQUE">🌍 Événement Géopolitique</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Gravité</label>
-          <select [(ngModel)]="newEvent.severite">
-            <option [ngValue]="EventSeverity.LOW">Faible</option>
-            <option [ngValue]="EventSeverity.MEDIUM">Moyenne</option>
-            <option [ngValue]="EventSeverity.HIGH">Élevée</option>
-            <option [ngValue]="EventSeverity.CRITICAL">Critique</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Titre</label>
-          <input type="text" [(ngModel)]="newEvent.titre">
-        </div>
-        <div class="form-group">
-          <label>Description</label>
-          <textarea [(ngModel)]="newEvent.description"></textarea>
-        </div>
-        <button class="btn-trigger-event" (click)="triggerEvent()">Déclencher</button>
+
+      <div class="summary">
+        Total estimé :
+        <b>
+          {{
+            orderQuantity *
+            (orderType===OrderType.MARKET
+              ? (marketData[selectedSymbol]?.price || 0)
+              : orderPrice)
+            | currency:'EUR':'symbol':'1.2-2'
+          }}
+        </b>
       </div>
+
+      <button class="btn-cta" (click)="placeOrder()"
+              [disabled]="session.status !== SessionStatus.OPEN">
+        {{ orderSide===OrderSide.BUY ? 'Acheter' : 'Vendre' }} {{ orderQuantity }} {{ selectedSymbol }}
+      </button>
     </div>
   </div>
 </div>

@@ -198,11 +198,8 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
       
       this.addNotification('success', 'Connecté au serveur de trading');
 
-      // S'abonner aux mises à jour du marché
-      const marketSub = this.wsService.getMarketUpdates().subscribe(
-        (update: MarketUpdate) => this.handleMarketUpdate(update)
-      );
-      this.subscriptions.push(marketSub);
+      
+     
 
       // S'abonner au chat
       const chatSub = this.wsService.getChatMessages().subscribe(
