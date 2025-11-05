@@ -87,10 +87,16 @@
     </div>
   </header>
 
-  <!-- GRAPHIQUE -->
-  <div class="chart-section">
-    <canvas #assetChart></canvas>
-  </div>
+ <!-- GRAPHIQUE (TradingView) -->
+<div class="chart-section">
+  <app-price-chart
+    [symbol]="tvSymbol"
+    [interval]="'1'"
+    [theme]="'dark'"
+    [autosize]="true">
+  </app-price-chart>
+</div>
+
 
   <!-- MÉTRIQUES -->
   <div class="metrics-grid">
