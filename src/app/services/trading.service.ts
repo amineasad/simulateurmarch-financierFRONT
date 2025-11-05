@@ -7,7 +7,7 @@ import { Asset, Position, OrderBook } from '../models/market.model';
 export class TradingService {
   // ====== API externes ======
   private readonly FINNHUB_API = 'https://finnhub.io/api/v1/quote';
-  private readonly FINNHUB_KEY = 'd44hgdpr01qt371v3oe0d44hgdpr01qt371v3oeg'; // ⬅️ remplace par ta clé Finnhub
+  private readonly FINNHUB_KEY = 'd4584rpr01qsugt952ggd4584rpr01qsugt952h0'; // ⬅️ remplace par ta clé Finnhub
   private readonly API_URL = 'http://localhost:8080/api'; // (backend perso si besoin)
 
   // ====== États observables ======

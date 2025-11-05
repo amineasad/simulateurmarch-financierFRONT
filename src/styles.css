@@ -54,3 +54,8 @@ input[type="number"] {
   background: #3b82f6;
   color: white;
 }
+/* SCROLL GLOBAL ULTIME */
+html, body { 
+  height: auto !important; 
+  overflow-y: auto !important; 
+}

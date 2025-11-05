@@ -29,6 +29,12 @@ import { SignupIndividualComponent } from './components/signup-individual/signup
 // Composants Wallet
 import { WalletManagementComponent } from './components/wallet/wallet-management/wallet-management.component';
 import { SuccessComponent } from './components/wallet/success/success.component';
+// Composant pour les détails des actifs
+import { AssetDetailComponent } from './components/asset-detail/asset-detail.component';
+// Composant pour afficher les prix
+import { PriceDisplayComponent } from './components/price-display/price-display.component';
+// 🔥 NOUVEAU : Composant News Market
+import { NewsMarketComponent } from './components/news-market/news-market.component';
 
 // Guard (si vous en avez un)
 // import { AuthGuard } from './guards/auth.guard';
@@ -62,6 +68,12 @@ const routes: Routes = [
   { path: 'wallet/manage', component: WalletManagementComponent },
   { path: 'wallet/success', component: SuccessComponent },
   { path: 'wallet/cancel', redirectTo: '/wallet/manage' },
+  // 🔥 NOUVELLE ROUTE : NEWS MARKET
+  { path: 'news-market', component: NewsMarketComponent },
+  // Prix et actifs
+  { path: 'prices', component: PriceDisplayComponent },
+  { path: 'asset-details/:symbol', component: AssetDetailComponent },
+  { path: 'forex-details/:from/:to', component: AssetDetailComponent },
   
   // ✅ Redirection par défaut vers Landing Page
   { path: '**', redirectTo: '', pathMatch: 'full' }

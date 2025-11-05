@@ -1,0 +1,132 @@
+<div class="trading-dashboard">
+  <!-- 🚀 CARROUSEL INDICATEURS 3D -->
+  <div class="indicators-carousel">
+    <button class="carousel-prev" (click)="moveCarousel('prev')">‹</button>
+    <div class="carousel-container">
+      <div class="carousel-track" #carouselTrack>
+        <!-- RSI -->
+        <div class="indicator-card rsi" [ngClass]="{'buy': rsi < 70 && rsi > 30, 'sell': rsi > 70}">
+          <div class="icon">📈</div>
+          <div class="label">RSI</div>
+          <div class="value">{{ rsi | number:'1.0-0' }}</div>
+          <div class="signal">{{ rsi < 30 ? 'ACHAT' : rsi > 70 ? 'VENTE' : 'NEUTRE' }}</div>
+        </div>
+
+        <!-- MACD -->
+        <div class="indicator-card macd" [ngClass]="{'buy': macd > 0, 'sell': macd < 0}">
+          <div class="icon">📊</div>
+          <div class="label">MACD</div>
+          <div class="value">{{ macd | number:'1.3-3' }}</div>
+          <div class="signal">{{ macd > 0 ? 'HAUSSIER' : 'BAISSIER' }}</div>
+        </div>
+
+        <!-- MA20 -->
+        <div class="indicator-card ma20">
+          <div class="icon">📉</div>
+          <div class="label">MA20</div>
+          <div class="value">${{ ma20 | number:'1.2-2' }}</div>
+          <div class="signal">{{ price > ma20 ? 'AU-DESSUS' : 'EN-DESSOUS' }}</div>
+        </div>
+
+        <!-- BOLLINGER -->
+        <div class="indicator-card bollinger">
+          <div class="icon">📏</div>
+          <div class="label">BB</div>
+          <div class="value">{{ (bb_width * 100) | number:'1.1-1' }}%</div>
+          <div class="signal">{{ bb_width > 0.05 ? 'VOLATIL' : 'CALME' }}</div>
+        </div>
+
+        <!-- STOCHASTIC -->
+        <div class="indicator-card stoch" [ngClass]="{'buy': stoch < 20, 'sell': stoch > 80}">
+          <div class="icon">⚡</div>
+          <div class="label">STOCH</div>
+          <div class="value">{{ stoch | number:'1.0-0' }}</div>
+          <div class="signal">{{ stoch < 20 ? 'ACHAT' : stoch > 80 ? 'VENTE' : 'NEUTRE' }}</div>
+        </div>
+
+        <!-- ADX -->
+        <div class="indicator-card adx" [ngClass]="{'strong': adx > 25}">
+          <div class="icon">💪</div>
+          <div class="label">ADX</div>
+          <div class="value">{{ adx | number:'1.0-0' }}</div>
+          <div class="signal">{{ adx > 25 ? 'FORTE' : 'FAIBLE' }}</div>
+        </div>
+
+        <!-- ATR -->
+        <div class="indicator-card atr">
+          <div class="icon">🔥</div>
+          <div class="label">ATR</div>
+          <div class="value">{{ atr | number:'1.2-2' }}</div>
+          <div class="signal">VOLATILITÉ</div>
+        </div>
+
+        <!-- SUPPORT/RÉSISTANCE -->
+        <div class="indicator-card support">
+          <div class="icon">🛡️</div>
+          <div class="label">S/R</div>
+          <div class="value">{{ (price - support) / support * 100 | number:'1.1-1' }}%</div>
+          <div class="signal">{{ price > resistance ? 'BREAKOUT' : 'SUPPORT' }}</div>
+        </div>
+      </div>
+    </div>
+    <button class="carousel-next" (click)="moveCarousel('next')">›</button>
+  </div>
+
+  <!-- HEADER -->
+  <header class="dashboard-header">
+    <h1 class="symbol-title">{{ symbol || from + '/' + to }}</h1>
+    <div class="price-live">
+      <span class="price-value">${{ price | number:'1.2-2' }}</span>
+      <span class="price-change" [ngClass]="{'positive': priceChange > 0, 'negative': priceChange < 0}">
+        {{ priceChange | number:'1.2-2' }} ({{ priceChangePercent | number:'1.1-1' }}%)
+      </span>
+    </div>
+    <div class="trading-actions">
+      <button class="btn-trade buy" (click)="executeTrade('BUY')">BUY</button>
+      <button class="btn-trade sell" (click)="executeTrade('SELL')">SELL</button>
+    </div>
+  </header>
+
+  <!-- GRAPHIQUE -->
+  <div class="chart-section">
+    <canvas #assetChart></canvas>
+  </div>
+
+  <!-- MÉTRIQUES -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div>📊</div>
+      <div>{{ volatility | number:'1.1-1' }}%</div>
+      <div>Volatilité</div>
+    </div>
+    <div class="metric-card">
+      <div>📈</div>
+      <div>{{ volume | number:'0.0-0' }}</div>
+      <div>Volume</div>
+    </div>
+    <div class="metric-card">
+      <div>🕐</div>
+      <div>{{ currentTime }}</div>
+      <div>LIVE</div>
+    </div>
+  </div>
+
+  <!-- CONTENU TEST SCROLL VERTICAL -->
+  <div class="scroll-test">
+    <h3>📈 ANALYSE TECHNIQUE DÉTAILLÉE</h3>
+    <p>RSI: {{ rsi }} | MACD: {{ macd }} | MA20: ${{ ma20 }}</p>
+    <p>STOCH: {{ stoch }} | ADX: {{ adx }} | ATR: {{ atr }}</p>
+    <p>Support: ${{ support }} | Resistance: ${{ resistance }}</p>
+    <div style="height: 600px; background: rgba(0,0,0,0.3); padding: 20px; margin: 20px 0;">
+      <h4>📊 SIGNATURES TRADING</h4>
+      <ul>
+        <li>🟢 RSI {{ rsi < 30 ? 'ACHAT' : rsi > 70 ? 'VENTE' : 'NEUTRE' }}</li>
+        <li>🟢 MACD {{ macd > 0 ? 'HAUSSIER' : 'BAISSIER' }}</li>
+        <li>🟢 STOCH {{ stoch < 20 ? 'ACHAT' : stoch > 80 ? 'VENTE' : 'NEUTRE' }}</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- BOUTON RETOUR -->
+  <button class="btn-back" (click)="goBack()">← Retour</button>
+</div>

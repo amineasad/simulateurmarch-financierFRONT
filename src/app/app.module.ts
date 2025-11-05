@@ -28,6 +28,9 @@ import { SignupStudentComponent } from './components/signup-student/signup-stude
 import { SignupIndividualComponent } from './components/signup-individual/signup-individual.component';
 import { SignupCompanyComponent } from './components/signup-company/signup-company.component';
 import { AccountOpeningIntroComponent } from './components/account-opening-intro/account-opening-intro.component';
+import { AssetDetailComponent } from './components/asset-detail/asset-detail.component';
+import { NewsMarketComponent } from './components/news-market/news-market.component';
+import { PriceDisplayComponent } from './components/price-display/price-display.component';
 
 
 @NgModule({
@@ -50,6 +53,9 @@ GamingRoomComponent,
     SignupIndividualComponent,
     SignupCompanyComponent,
     AccountOpeningIntroComponent,
+    AssetDetailComponent,
+    PriceDisplayComponent,
+    NewsMarketComponent
     // ← Ajout
   ],
   imports: [

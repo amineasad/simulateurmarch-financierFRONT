@@ -1,0 +1,431 @@
+/* TRADING COCKPIT 2.0 PRO - LAYOUT COMPACT PHASE 2 */
+.trading-cockpit {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+  color: white;
+  font-family: 'Courier New', monospace;
+  overflow-x: hidden;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 40px;
+  background: rgba(0, 0, 0, 0.95);
+  border-bottom: 2px solid #00d4ff;
+}
+
+.logo-neon {
+  font-size: 1.8rem;
+  background: linear-gradient(45deg, #00d4ff, #ff6b6b, #ffd700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(0, 212, 255, 0.7);
+}
+
+.top-stats { display: flex; gap: 15px; }
+.stat-card {
+  background: rgba(0, 212, 255, 0.1);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #00d4ff;
+  font-size: 0.85rem;
+}
+
+/* PORTFOLIO PHASE 2 */
+.portfolio-panel {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 40px;
+  background: rgba(0, 255, 136, 0.1);
+  border-bottom: 1px solid #00ff88;
+}
+
+.pnl-display {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.pnl-profit {
+  color: #00ff88;
+  text-shadow: 0 0 10px #00ff88;
+  margin-right: 20px;
+}
+
+.cash-display {
+  color: #ffd700;
+}
+
+.positions-mini {
+  background: rgba(255, 215, 0, 0.2);
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+}
+
+/* CONTROLS PANEL : TABS À CÔTÉ SEARCH */
+.controls-panel {
+  display: flex;
+  align-items: center;
+  padding: 15px 40px;
+  background: rgba(0, 0, 0, 0.7);
+  gap: 15px;
+}
+
+/* SEARCH BAR COMPACT */
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 20px;
+  padding: 5px;
+  border: 1px solid #00d4ff;
+  margin: 0;
+}
+
+.search-bar input {
+  width: 250px;
+  padding: 10px 15px;
+  border: none;
+  background: transparent;
+  color: white;
+  outline: none;
+  font-size: 0.9rem;
+}
+
+.search-icon {
+  padding: 10px 8px;
+  color: #00d4ff;
+  font-size: 1.1rem;
+}
+
+/* TABS COMPACT À CÔTÉ */
+.neon-tabs {
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.tab {
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #333;
+  color: white;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.tab.active, .tab:hover {
+  background: linear-gradient(45deg, #00d4ff, #0099ff);
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+  transform: scale(1.02);
+}
+
+/* TOP LISTS PHASE 2 */
+.top-lists {
+  display: flex;
+  gap: 20px;
+  padding: 15px 40px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.top-gainers, .top-losers {
+  flex: 1;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.top-gainers {
+  background: linear-gradient(135deg, rgba(0, 255, 0, 0.2), rgba(0, 255, 136, 0.1));
+  border: 1px solid #00ff88;
+}
+
+.top-losers {
+  background: linear-gradient(135deg, rgba(255, 0, 0, 0.2), rgba(255, 107, 107, 0.1));
+  border: 1px solid #ff4d4d;
+}
+
+.top-gainers h4, .top-losers h4 { margin: 0 0 10px 0; font-size: 0.9rem; }
+.top-gainers span, .top-losers span { display: block; font-size: 0.8rem; margin: 2px 0; }
+
+/* TABLE */
+.heatmap-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(0, 0, 0, 0.9);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.heatmap-table th {
+  background: linear-gradient(90deg, #1a1a2e, #16213e);
+  padding: 12px;
+  text-align: left;
+  border-bottom: 2px solid #00d4ff;
+  color: #00d4ff;
+}
+
+.heatmap-table td { padding: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+
+.heatmap-row {
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.heatmap-row:hover { background: rgba(0, 212, 255, 0.1); }
+
+.heatmap-row.strong-buy { background: rgba(0, 255, 0, 0.3) !important; animation: pulse-green 1s; }
+.heatmap-row.buy { background: rgba(0, 255, 136, 0.15); }
+.heatmap-row.sell { background: rgba(255, 107, 107, 0.15); }
+.heatmap-row.strong-sell { background: rgba(255, 0, 0, 0.3) !important; animation: pulse-red 1s; }
+
+.top-gainer { border-left: 4px solid #00ff88 !important; }
+.top-loser { border-left: 4px solid #ff4d4d !important; }
+
+.symbol { font-weight: bold; min-width: 80px; }
+.price { font-family: monospace; font-weight: bold; min-width: 100px; }
+.rsi { color: #ffd700; min-width: 60px; }
+.volume { min-width: 100px; }
+
+.up { color: #00ff88 !important; }
+.down { color: #ff4d4d !important; }
+.arrow { font-size: 1.1rem; margin-left: 3px; }
+
+/* 4 BOUTONS TRADING PHASE 2 */
+.trading-actions { 
+  display: flex; 
+  gap: 3px; 
+  min-width: 280px; 
+  flex-wrap: wrap;
+}
+
+.buy-btn {
+  background: linear-gradient(45deg, #00ff88, #00cc66);
+  color: black;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.sell-btn {
+  background: linear-gradient(45deg, #ff4d4d, #cc0000);
+  color: white;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.chart-btn {
+  background: linear-gradient(45deg, #ffd700, #ffaa00);
+  color: black;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.detail-btn {
+  background: linear-gradient(45deg, #00d4ff, #0099ff);
+  color: white;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.buy-btn:hover, .sell-btn:hover, .chart-btn:hover, .detail-btn:hover { 
+  transform: scale(1.05); 
+}
+
+/* PAGINATION */
+.pagination-neon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 40px;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.page-btn, .page-number {
+  padding: 8px 12px;
+  background: rgba(0, 212, 255, 0.2);
+  border: 1px solid #00d4ff;
+  color: #00d4ff;
+  border-radius: 15px;
+  cursor: pointer;
+}
+.page-number.active { background: #00d4ff; color: black; }
+
+/* CHART MODAL PHASE 2 */
+.chart-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.95);
+  border: 2px solid #00d4ff;
+  border-radius: 15px;
+  padding: 20px;
+  z-index: 2000;
+  box-shadow: 0 0 50px rgba(0, 212, 255, 0.5);
+  max-width: 90vw;
+  max-height: 80vh;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.close-btn {
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.timeframes {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+.timeframes button {
+  padding: 8px 12px;
+  border: 1px solid #00d4ff;
+  background: transparent;
+  color: #00d4ff;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.timeframes button.active { background: #00d4ff; color: black; }
+
+/* NOTIFICATIONS PHASE 2 */
+.notifications {
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  z-index: 1000;
+  max-width: 350px;
+}
+
+.notification {
+  padding: 12px 16px;
+  margin: 8px 0;
+  border-radius: 10px;
+  font-weight: bold;
+  animation: slideIn 0.4s ease;
+  border-left: 4px solid;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.notification.buy { background: linear-gradient(135deg, #00ff88, #00cc66); color: black; border-left-color: #00ff88; }
+.notification.sell { background: linear-gradient(135deg, #ff4d4d, #cc0000); color: white; border-left-color: #ff4d4d; }
+.notification.breakout { background: linear-gradient(135deg, #ffd700, #ffaa00); color: black; border-left-color: #ffd700; }
+.notification.favorite { background: linear-gradient(135deg, #ffaa00, #ff7700); color: black; border-left-color: #ffaa00; }
+
+/* SUPER ALERTES PHASE 2 */
+.notification.super-buy { 
+  background: linear-gradient(135deg, #00ff00, #00cc00) !important; 
+  animation: super-blink 0.5s 3 !important;
+  border-left-color: #00ff00 !important;
+  box-shadow: 0 0 20px #00ff00 !important;
+}
+
+.notification.volume-explosion { 
+  background: linear-gradient(135deg, #ff0000, #cc0000) !important; 
+  animation: explosion-shake 0.3s 3 !important;
+  border-left-color: #ff0000 !important;
+  box-shadow: 0 0 20px #ff0000 !important;
+}
+
+/* ANIMATIONS */
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes pulse-green { 0%, 100% { background: rgba(0, 255, 0, 0.3); } 50% { background: rgba(0, 255, 0, 0.5); } }
+@keyframes pulse-red { 0%, 100% { background: rgba(255, 0, 0, 0.3); } 50% { background: rgba(255, 0, 0, 0.5); } }
+@keyframes super-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+@keyframes explosion-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+/* TICKER */
+.live-ticker {
+  background: rgba(0, 0, 0, 0.95);
+  border-top: 2px solid #00d4ff;
+  overflow: hidden;
+}
+.ticker-content {
+  display: flex;
+  animation: scroll-left 25s linear infinite;
+  gap: 25px;
+  padding: 10px 40px;
+}
+.ticker-content span { white-space: nowrap; padding: 5px 0; }
+
+/* TOOLTIP + STAR */
+.tooltip {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid #00ff88;
+  border-radius: 8px;
+  padding: 10px;
+  z-index: 1000;
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+}
+
+.star-indicator {
+  color: #ffd700;
+  margin-left: 5px;
+  text-shadow: 0 0 5px #ffd700;
+  animation: star-twinkle 2s infinite;
+}
+
+@keyframes star-twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .trading-actions { flex-direction: column; gap: 2px; }
+  .top-lists { flex-direction: column; }
+  .chart-modal { width: 95vw; height: 70vh; }
+  .neon-tabs { 
+    flex-wrap: wrap; 
+    justify-content: center; 
+    gap: 3px; 
+  }
+  .search-bar input { width: 200px; }
+  .controls-panel { 
+    flex-direction: column; 
+    gap: 10px; 
+    padding: 10px 20px; 
+  }
+  .tab { 
+    padding: 6px 8px; 
+    font-size: 0.75rem; 
+  }
+}
+
+/* TICKER ANIMATION */
+@keyframes scroll-left {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}

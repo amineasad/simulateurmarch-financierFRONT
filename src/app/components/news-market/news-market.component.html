@@ -1,0 +1,119 @@
+<div class="news-market-container">
+  <!-- LOADING -->
+  <div *ngIf="loading" class="loading">
+    <h2>🔄 IA INTELLIGENTE ANALYSE 20 NEWS...</h2>
+  </div>
+
+  <!-- CONTENT -->
+  <div *ngIf="!loading">
+    <!-- HEADER -->
+    <div class="news-header">
+      <h1>📰 NEWS MARCHÉ + IA INTELLIGENTE</h1>
+      <div class="news-stats">
+        <span class="stat">📊 {{ news.length }} NEWS LIVE</span>
+        <span class="stat bullish">🚀 {{ bullishCount }} BULLISH</span>
+        <span class="stat bearish">💥 {{ bearishCount }} BEARISH</span>
+        <span class="stat high">🔥 {{ highImpactCount }} HIGH IMPACT</span>
+        <span class="stat live">⚡ {{ liveCount }} LIVE</span>
+      </div>
+    </div>
+
+    <!-- FILTRES -->
+    <div class="news-filters">
+      <button class="filter-btn" [class.active]="filter === 'all'" (click)="filter = 'all'">TOUTES</button>
+      <button class="filter-btn" [class.active]="filter === 'bullish'" (click)="filter = 'bullish'">🚀 BULLISH</button>
+      <button class="filter-btn" [class.active]="filter === 'bearish'" (click)="filter = 'bearish'">💥 BEARISH</button>
+      <button class="filter-btn" [class.active]="filter === 'high'" (click)="filter = 'high'">🔥 HIGH IMPACT</button>
+      <button class="filter-btn" [class.active]="filter === 'live'" (click)="filter = 'live'">⚡ LIVE</button>
+      <button class="filter-btn" [class.active]="filter === 'geopolitical'" (click)="filter = 'geopolitical'">🌍 GÉOPOLITIQUE</button>
+      <button class="filter-btn" [class.active]="filter === 'financial'" (click)="filter = 'financial'">💰 FINANCIER</button>
+      <button class="filter-btn" [class.active]="filter === 'political'" (click)="filter = 'political'">🏛️ POLITIQUE</button>
+    </div>
+
+    <!-- NEWS GRID -->
+    <div class="news-grid">
+      <div *ngFor="let newsItem of getFilteredNews()" class="news-card" 
+           [class.bullish]="newsItem.sentiment === 'bullish'"
+           [class.bearish]="newsItem.sentiment === 'bearish'"
+           [class.high-impact]="newsItem.impact === 'high'"
+           [class.live]="newsItem.category === 'live'">
+        
+        <!-- HEADER CARTE -->
+        <div class="news-header-card">
+          <div class="sentiment-impact">
+            <span class="sentiment" [class.bullish]="newsItem.sentiment === 'bullish'" 
+                                [class.bearish]="newsItem.sentiment === 'bearish'"
+                                [class.neutral]="newsItem.sentiment === 'neutral'">
+              {{ newsItem.sentiment.toUpperCase() }}
+            </span>
+            <span class="impact" [class.high]="newsItem.impact === 'high'"
+                                [class.medium]="newsItem.impact === 'medium'"
+                                [class.low]="newsItem.impact === 'low'">
+              {{ newsItem.impact.toUpperCase() }}
+            </span>
+            <span class="category" [class.live]="newsItem.category === 'live'"
+                                [class.financial]="newsItem.category === 'financial'"
+                                [class.geopolitical]="newsItem.category === 'geopolitical'"
+                                [class.political]="newsItem.category === 'political'">
+              {{ getCategoryIcon(newsItem.category) }}
+            </span>
+          </div>
+          <span class="source">{{ newsItem.source }}</span>
+        </div>
+
+        <!-- TITRE -->
+        <h3 class="news-title">{{ newsItem.title }}</h3>
+        
+        <!-- RÉSUMÉ -->
+        <p class="news-summary">{{ newsItem.summary }}</p>
+
+        <!-- 🔥 IA RECOS : 3-5 UNIQUES -->
+        <div class="ia-recommendations">
+          <strong>🤖 IA RECOMMANDE :</strong>
+          <span *ngFor="let reco of newsItem.recommendations" 
+                class="reco-tag" 
+                [class.achat]="reco.advice === 'ACHAT'"
+                [class.vente]="reco.advice === 'VENTE'"
+                [class.neutre]="reco.advice === 'NEUTRE'">
+            {{ reco.asset }} {{ reco.advice }}
+          </span>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="news-footer">
+          <span class="news-date">{{ newsItem.date }}</span>
+          <div class="action-buttons">
+            <button class="advice-btn" 
+                    [class.buy]="newsItem.sentiment === 'bullish'" 
+                    [class.sell]="newsItem.sentiment === 'bearish'">
+              <span class="icon">{{ newsItem.sentiment === 'bullish' ? '📈' : '📉' }}</span>
+              {{ getTradingAdvice(newsItem) }}
+            </button>
+            <button class="read-more-btn" (click)="openNews(newsItem.url)">
+              📖 LIRE PLUS
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTES FIXÉES BAS -->
+    <div class="trading-alerts-panel">
+      <h3>💡 ALERTES IA LIVE</h3>
+      <div class="alert-list">
+        <div *ngFor="let alert of getHighImpactNews()" 
+             class="alert-item" 
+             [class.buy]="alert.sentiment === 'bullish'" 
+             [class.sell]="alert.sentiment === 'bearish'">
+          <span class="alert-icon">{{ alert.sentiment === 'bullish' ? '📈' : '📉' }}</span>
+          <span class="alert-text">
+            {{ getTradingAdvice(alert) }} : {{ alert.title | slice:0:30 }}...
+            <strong *ngIf="alert.recommendations.length > 0">
+              ({{ alert.recommendations[0].asset }} {{ alert.recommendations[0].advice }})
+            </strong>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
