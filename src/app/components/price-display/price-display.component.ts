@@ -135,27 +135,38 @@ export class PriceDisplayComponent implements OnInit, OnDestroy {
   }
 
   // ✅ TRADING BUTTONS PHASE 2
-  buyStock(stock: Stock): void {
-    this.portfolio.unshift({
-      symbol: stock.symbol,
-      quantity: 10,
-      avgPrice: stock.price,
-      currentPrice: stock.price
-    });
-    this.cash -= stock.price * 10;
-    this.updatePnL();
-    console.log(`💰 ACHAT ${stock.symbol} x10 @ $${stock.price}`);
-  }
+ buyStock(stock: Stock): void {
+  this.portfolio.unshift({
+    symbol: stock.symbol,
+    quantity: 10,
+    avgPrice: stock.price,
+    currentPrice: stock.price
+  });
+  this.cash -= stock.price * 10;
+  this.updatePnL();
+  console.log(`💰 ACHAT ${stock.symbol} x10 @ $${stock.price}`);
 
-  sellStock(stock: Stock): void {
-    const position = this.portfolio.find(p => p.symbol === stock.symbol);
-    if (position) {
-      this.cash += position.quantity * stock.price;
-      this.portfolio = this.portfolio.filter(p => p.symbol !== stock.symbol);
-      this.updatePnL();
-      console.log(`💸 VENTE ${stock.symbol} x${position.quantity} @ $${stock.price}`);
-    }
+  // 👉 redirection vers /orders
+  this.router.navigate(['/orders'], {
+    queryParams: { symbol: stock.symbol, side: 'BUY', price: stock.price }
+  });
+}
+
+sellStock(stock: Stock): void {
+  const position = this.portfolio.find(p => p.symbol === stock.symbol);
+  if (position) {
+    this.cash += position.quantity * stock.price;
+    this.portfolio = this.portfolio.filter(p => p.symbol !== stock.symbol);
+    this.updatePnL();
+    console.log(`💸 VENTE ${stock.symbol} x${position.quantity} @ $${stock.price}`);
+
+    // 👉 redirection vers /orders
+    this.router.navigate(['/orders'], {
+      queryParams: { symbol: stock.symbol, side: 'SELL', price: stock.price }
+    });
   }
+}
+
 
   setStop(stock: Stock): void {
     this.notifications.unshift({
