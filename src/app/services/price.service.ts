@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class PriceService {
-  private apiKey = ' 8K53JG89HP69V8QP'; // Clé API valide
+  private apiKey = '8K53JG89HP69V8QP'; // Clé API valide
   private apiUrl = 'https://www.alphavantage.co/query'; // URL de base corrigée
 
   constructor(private http: HttpClient) {

@@ -14,7 +14,7 @@ export interface Quote {
 @Injectable({ providedIn: 'root' })
 export class MarketDataService {
   // ⚠️ Mets ta clé ici (tu peux réutiliser la même que la trading room)
-  private readonly FINNHUB_KEY = 'd453941r01qsugt8est0d453941r01qsugt8estg';
+  private readonly FINNHUB_KEY = 'd45afohr01qsugt9fes0d45afohr01qsugt9fesg';
   private readonly BASE = 'https://finnhub.io/api/v1';
 
   private symbols = new Set<string>();

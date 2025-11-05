@@ -8,6 +8,9 @@
       <button class="btn-back" (click)="goToLobby()">
         ← à la salle de jeu
       </button>
+        <button class="btn-back" (click)="goToDetails()">
+        ← details
+      </button>
       <div class="time-info">
         <span class="icon">🕐</span>
         <span class="time">{{ currentTime | date:'HH:mm:ss' }}</span>
@@ -38,31 +41,57 @@
   <div class="main-content">
     
     <!-- LEFT PANEL - Watchlist -->
-    <div class="left-panel">
-      <div class="panel-header">WATCHLIST</div>
-      <div class="asset-list">
-        <div *ngFor="let asset of assets" 
-             class="asset-item"
-             [class.selected]="asset.symbol === selectedSymbol"
-             (click)="selectAsset(asset.symbol)">
-          <div class="asset-info">
-            <div class="asset-symbol">{{ asset.symbol }}</div>
-            <div class="asset-name">{{ asset.name }}</div>
-          </div>
-          <div class="asset-price">
-            <div class="price">{{ asset.price | number:'1.2-2' }}€</div>
-            <div class="change" [class.positive]="asset.change >= 0" [class.negative]="asset.change < 0">
-              <span class="icon">{{ asset.change >= 0 ? '▲' : '▼' }}</span>
-              {{ asset.change >= 0 ? '+' : '' }}{{ asset.change | number:'1.2-2' }}%
-            </div>
-          </div>
-          <div class="asset-details">
-            <span>Vol: {{ asset.volume }}</span>
-            <span class="spread">{{ asset.bid }}/{{ asset.ask }}</span>
-          </div>
+<div class="left-panel">
+  <div class="panel-header">WATCHLIST</div>
+
+  <!-- ✅ AJOUT ICI : bandeau de catégories -->
+  <div class="market-tabs">
+    <button class="tab" 
+            [class.active]="selectedCategory==='STOCKS'" 
+            (click)="changeCategory('STOCKS')">
+      📈 ACTIONS
+    </button>
+    <button class="tab" 
+            [class.active]="selectedCategory==='FOREX'" 
+            (click)="changeCategory('FOREX')">
+      💱 DEVISES
+    </button>
+    <button class="tab" 
+            [class.active]="selectedCategory==='METALS'" 
+            (click)="changeCategory('METALS')">
+      🪙 MÉTAUX
+    </button>
+    <button class="tab" 
+            [class.active]="selectedCategory==='ETFS'" 
+            (click)="changeCategory('ETFS')">
+      🏛️ ETF
+    </button>
+  </div>
+  <!-- ✅ FIN AJOUT -->
+
+  <div class="asset-list">
+    <div *ngFor="let asset of assets" 
+         class="asset-item"
+         [class.selected]="asset.symbol === selectedSymbol"
+         (click)="selectAsset(asset.symbol)">
+      <div class="asset-info">
+        <div class="asset-symbol">{{ asset.symbol }}</div>
+        <div class="asset-name">{{ asset.name }}</div>
+      </div>
+      <div class="asset-price">
+        <div class="price">{{ asset.price | number:'1.2-2' }}€</div>
+        <div class="change" [class.positive]="asset.change >= 0" [class.negative]="asset.change < 0">
+          <span class="icon">{{ asset.change >= 0 ? '▲' : '▼' }}</span>
+          {{ asset.change >= 0 ? '+' : '' }}{{ asset.change | number:'1.2-2' }}%
         </div>
       </div>
+      <div class="asset-details">
+        <span>Vol: {{ asset.volume }}</span>
+        <span class="spread">{{ asset.bid }}/{{ asset.ask }}</span>
+      </div>
     </div>
+  </div>
+</div>
 
     <!-- CENTER PANEL - Main Trading Area -->
     <div class="center-panel">
