@@ -31,6 +31,9 @@ import { AccountOpeningIntroComponent } from './components/account-opening-intro
 import { AssetDetailComponent } from './components/asset-detail/asset-detail.component';
 import { NewsMarketComponent } from './components/news-market/news-market.component';
 import { PriceDisplayComponent } from './components/price-display/price-display.component';
+import { EducationComponent } from './components/education/education.component';
+import { EducationAdminComponent } from './components/education-admin/education-admin.component';
+import { SafeUrlPipe } from './pipes/safe-url.pipe'; 
 
 
 @NgModule({
@@ -55,7 +58,11 @@ GamingRoomComponent,
     AccountOpeningIntroComponent,
     AssetDetailComponent,
     PriceDisplayComponent,
-    NewsMarketComponent
+    EducationComponent,
+    EducationAdminComponent,
+    NewsMarketComponent,
+     SafeUrlPipe,
+    
     // ← Ajout
   ],
   imports: [

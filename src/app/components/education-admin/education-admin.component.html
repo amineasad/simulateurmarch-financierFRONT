@@ -1,0 +1,94 @@
+<!-- LIST PAGE (visible only when not editing) -->
+<div class="admin-container" *ngIf="!isEditingPage">
+  <div class="admin-header">
+    <h2>Admin — Gestion des ressources éducatives</h2>
+    <button class="btn btn-primary" (click)="startCreate()">➕ Nouvelle ressource</button>
+  </div>
+
+  <div *ngIf="success" class="notice success">{{ success }}</div>
+  <div *ngIf="error" class="notice error">{{ error }}</div>
+
+  <div class="list">
+    <div *ngFor="let r of resources" class="item">
+      <div class="left">
+        <strong>
+          {{ r.title }}
+          <span class="chip" [ngClass]="{ 'article': r.type === 'ARTICLE', 'video': r.type === 'VIDEO' }">
+            {{ r.type === 'ARTICLE' ? 'Article' : 'Vidéo' }}
+          </span>
+          <span class="chip level" [ngClass]="classeNiveau(r.difficulty)">
+            {{ labelNiveau(r.difficulty) }}
+          </span>
+        </strong>
+        <div class="muted">{{ r.description || '—' }}</div>
+      </div>
+      <div class="right">
+        <button class="btn btn-secondary" (click)="goEdit(r)">✏️ Modifier</button>
+        <button class="btn btn-danger" (click)="deleteResource(r.id)">🗑️ Supprimer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDITOR PAGE (full-screen overlay; appears as a separate page) -->
+<div class="editor-page" *ngIf="isEditingPage && editing as e">
+  <div class="editor-header">
+    <h2>{{ e.id ? 'Modifier une ressource' : 'Créer une ressource' }}</h2>
+    <button class="btn btn-secondary" (click)="backToList()">← Retour à la liste</button>
+  </div>
+
+  <div class="editor-card">
+    <form #f="ngForm" (ngSubmit)="save(f)">
+      <div class="form-grid">
+        <!-- Titre -->
+        <div class="form-group">
+          <label for="title">Titre</label>
+          <input id="title" name="title" required [(ngModel)]="e.title" placeholder="Titre de la ressource" />
+        </div>
+
+        <!-- Type -->
+        <div class="form-group">
+          <label for="type">Type</label>
+          <select id="type" name="type" [(ngModel)]="e.type">
+            <option value="ARTICLE">Article</option>
+            <option value="VIDEO">Vidéo</option>
+          </select>
+        </div>
+
+        <!-- Niveau -->
+        <div class="form-group">
+          <label for="difficulty">Niveau</label>
+          <select id="difficulty" name="difficulty" [(ngModel)]="e.difficulty">
+            <option value="EASY">Débutant</option>
+            <option value="MID">Intermédiaire</option>
+            <option value="ADV">Avancé</option>
+          </select>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group full">
+          <label for="description">Description</label>
+          <input id="description" name="description" [(ngModel)]="e.description" placeholder="Courte description…" />
+        </div>
+
+        <!-- ARTICLE -->
+        <div class="form-group full" *ngIf="e.type === 'ARTICLE'">
+          <label for="content">Contenu (HTML autorisé)</label>
+          <textarea id="content" name="content" rows="12" [(ngModel)]="e.content"
+                    placeholder="<h3>Introduction</h3><p>Votre article…</p>"></textarea>
+        </div>
+
+        <!-- VIDEO -->
+        <div class="form-group full" *ngIf="e.type === 'VIDEO'">
+          <label for="url">URL vidéo (YouTube, Vimeo, etc.)</label>
+          <input id="url" name="url" [(ngModel)]="e.url" placeholder="https://www.youtube.com/watch?v=..." />
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+        <button type="button" class="btn btn-secondary" (click)="backToList()">✖️ Annuler</button>
+      </div>
+    </form>
+  </div>
+</div>

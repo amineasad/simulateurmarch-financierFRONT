@@ -61,7 +61,7 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
   username = '';
 
   // ========= STATISTIQUES =========
-  onlineTraders = 24;
+  
   latency = 12;
   ordersToday = 0;
   volumeToday = 0;
@@ -329,5 +329,8 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
   }
    goToDetails(): void {
     this.router.navigate(['/prices']);
+  }
+ goToEducation(): void {
+    this.router.navigate(['/education']);
   }
 }

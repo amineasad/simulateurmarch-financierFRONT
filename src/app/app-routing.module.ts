@@ -35,6 +35,9 @@ import { AssetDetailComponent } from './components/asset-detail/asset-detail.com
 import { PriceDisplayComponent } from './components/price-display/price-display.component';
 // 🔥 NOUVEAU : Composant News Market
 import { NewsMarketComponent } from './components/news-market/news-market.component';
+//education
+import { EducationComponent } from './components/education/education.component';
+import { EducationAdminComponent } from './components/education-admin/education-admin.component';
 
 // Guard (si vous en avez un)
 // import { AuthGuard } from './guards/auth.guard';
@@ -74,6 +77,9 @@ const routes: Routes = [
   { path: 'prices', component: PriceDisplayComponent },
   { path: 'asset-details/:symbol', component: AssetDetailComponent },
   { path: 'forex-details/:from/:to', component: AssetDetailComponent },
+   // Education
+  { path: 'education', component: EducationComponent },
+  { path: 'education/admin', component: EducationAdminComponent },
   
   // ✅ Redirection par défaut vers Landing Page
   { path: '**', redirectTo: '', pathMatch: 'full' }

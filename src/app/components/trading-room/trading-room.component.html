@@ -6,10 +6,10 @@
     <div class="top-bar-left">
       <div class="logo">TRADIX</div>
       <button class="btn-back" (click)="goToLobby()">
-        ← à la salle de jeu
+        🎮 à la salle de jeu
       </button>
         <button class="btn-back" (click)="goToDetails()">
-        ← details
+        ℹ️ infos
       </button>
       <div class="time-info">
         <span class="icon">🕐</span>
@@ -23,8 +23,10 @@
     
     <div class="top-bar-right">
       <div class="info-item">
-        <span class="icon">👥</span>
-        <span>{{ onlineTraders }} traders en ligne</span>
+      
+         <button class="btn-back" (click)="goToEducation()">
+        🎓 s'apprentir
+      </button>
       </div>
       <div class="info-item latency">
         <span class="icon">📡</span>
