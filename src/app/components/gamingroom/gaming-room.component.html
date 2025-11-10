@@ -47,7 +47,7 @@
         <h3>🎯 Marché</h3>
       </div>
       <div class="watchlist-content">
-        <div class="stock-row" 
+        <div class="stock-row"
              *ngFor="let s of symbols"
              [class.selected]="s === selectedSymbol"
              (click)="selectSymbol(s)">
@@ -89,7 +89,7 @@
           </div>
         </div>
         <div class="chart-content">
-          <app-price-chart 
+          <app-price-chart
             [symbol]="tradingViewSymbol"
             [interval]="'1'"
             [theme]="'dark'"
@@ -112,7 +112,7 @@
           <div class="empty-state" *ngIf="activityFeed.length === 0">
             <em>Aucune activité pour le moment</em>
           </div>
-          <div class="activity-item" 
+          <div class="activity-item"
                *ngFor="let item of activityFeed"
                [class.buy]="item.type === 'buy'"
                [class.sell]="item.type === 'sell'">
@@ -123,110 +123,158 @@
       </div>
     </div>
 
-    <!-- ORDER FORM (droite) -->
-    <div class="panel order-panel">
-      <div class="panel-header">
-        <h3>💼 Passer un ordre</h3>
+    <!-- RIGHT COLUMN (order form + portfolio) -->
+    <div class="right-column">
+      <!-- ORDER FORM -->
+      <div class="panel order-panel">
+        <div class="panel-header">
+          <h3>💼 Passer un ordre</h3>
+        </div>
+
+        <div class="order-form">
+          <!-- Symbole -->
+          <div class="form-row">
+            <label>Symbole</label>
+            <div class="symbol-display">{{ selectedSymbol }}</div>
+          </div>
+
+          <!-- Type d'ordre -->
+          <div class="form-row">
+            <label>Type d'ordre</label>
+            <select [(ngModel)]="orderType" (change)="onOrderTypeChange()" class="form-select">
+              <option [ngValue]="OrderType.MARKET">🚀 Marché</option>
+              <option [ngValue]="OrderType.LIMIT">🎯 Limite</option>
+            </select>
+          </div>
+
+          <!-- Side (Achat/Vente) -->
+          <div class="form-row">
+            <label>Action</label>
+            <div class="side-toggle">
+              <button class="side-btn buy"
+                      [class.active]="orderSide === OrderSide.BUY"
+                      (click)="orderSide = OrderSide.BUY">
+                🟢 Acheter
+              </button>
+              <button class="side-btn sell"
+                      [class.active]="orderSide === OrderSide.SELL"
+                      (click)="orderSide = OrderSide.SELL">
+                🔴 Vendre
+              </button>
+            </div>
+          </div>
+
+          <!-- Quantité -->
+          <div class="form-row">
+            <label>Quantité</label>
+            <input type="number"
+                   min="1"
+                   [(ngModel)]="orderQuantity"
+                   class="form-input"
+                   placeholder="10">
+          </div>
+
+          <!-- Prix limite (si LIMIT) -->
+          <div class="form-row" *ngIf="orderType === OrderType.LIMIT">
+            <label>Prix limite</label>
+            <input type="number"
+                   step="0.01"
+                   min="0.01"
+                   [(ngModel)]="orderPrice"
+                   class="form-input"
+                   placeholder="100.00">
+          </div>
+
+          <!-- Estimation -->
+          <div class="order-summary">
+            <div class="summary-row">
+              <span>Total estimé</span>
+              <span class="summary-value">
+                {{ getEstimatedTotal() | currency:'EUR':'symbol':'1.2-2' }}
+              </span>
+            </div>
+            <div class="summary-row" *ngIf="myParticipation && orderSide === OrderSide.BUY">
+              <span>Cash disponible</span>
+              <span class="summary-value">
+                {{ myParticipation.cashActuel | currency:'EUR':'symbol':'1.2-2' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Erreur -->
+          <div class="order-error" *ngIf="lastOrderError">
+            ⚠️ {{ lastOrderError }}
+          </div>
+
+          <!-- Bouton d'action -->
+          <button class="order-submit"
+                  [class.buy]="orderSide === OrderSide.BUY"
+                  [class.sell]="orderSide === OrderSide.SELL"
+                  [disabled]="isPlacingOrder"
+                  (click)="placeOrder()">
+            <span *ngIf="!isPlacingOrder">
+              {{ orderSide === OrderSide.BUY ? '🟢 Acheter' : '🔴 Vendre' }}
+              {{ orderQuantity }} {{ selectedSymbol }}
+            </span>
+            <span *ngIf="isPlacingOrder">⏳ Traitement...</span>
+          </button>
+
+          <!-- Info si pas possible de trader -->
+          <div class="trade-disabled-info" *ngIf="!canTrade()">
+            <small>
+              {{ session.status !== SessionStatus.OPEN
+                 ? 'La session n\'est pas ouverte'
+                 : 'Impossible de trader pour le moment' }}
+            </small>
+          </div>
+        </div>
       </div>
 
-      <div class="order-form">
-        <!-- Symbole -->
-        <div class="form-row">
-          <label>Symbole</label>
-          <div class="symbol-display">{{ selectedSymbol }}</div>
-        </div>
-
-        <!-- Type d'ordre -->
-        <div class="form-row">
-          <label>Type d'ordre</label>
-          <select [(ngModel)]="orderType" (change)="onOrderTypeChange()" class="form-select">
-            <option [ngValue]="OrderType.MARKET">🚀 Marché</option>
-            <option [ngValue]="OrderType.LIMIT">🎯 Limite</option>
-          </select>
-        </div>
-
-        <!-- Side (Achat/Vente) -->
-        <div class="form-row">
-          <label>Action</label>
-          <div class="side-toggle">
-            <button class="side-btn buy"
-                    [class.active]="orderSide === OrderSide.BUY"
-                    (click)="orderSide = OrderSide.BUY">
-              🟢 Acheter
-            </button>
-            <button class="side-btn sell"
-                    [class.active]="orderSide === OrderSide.SELL"
-                    (click)="orderSide = OrderSide.SELL">
-              🔴 Vendre
-            </button>
-          </div>
-        </div>
-
-        <!-- Quantité -->
-        <div class="form-row">
-          <label>Quantité</label>
-          <input type="number" 
-                 min="1" 
-                 [(ngModel)]="orderQuantity"
-                 class="form-input"
-                 placeholder="10">
-        </div>
-
-        <!-- Prix limite (si LIMIT) -->
-        <div class="form-row" *ngIf="orderType === OrderType.LIMIT">
-          <label>Prix limite</label>
-          <input type="number" 
-                 step="0.01" 
-                 min="0.01"
-                 [(ngModel)]="orderPrice"
-                 class="form-input"
-                 placeholder="100.00">
-        </div>
-
-        <!-- Estimation -->
-        <div class="order-summary">
-          <div class="summary-row">
-            <span>Total estimé</span>
-            <span class="summary-value">
-              {{ getEstimatedTotal() | currency:'EUR':'symbol':'1.2-2' }}
-            </span>
-          </div>
-          <div class="summary-row" *ngIf="myParticipation && orderSide === OrderSide.BUY">
-            <span>Cash disponible</span>
-            <span class="summary-value">
-              {{ myParticipation.cashActuel | currency:'EUR':'symbol':'1.2-2' }}
+      <!-- PORTFOLIO / POSITIONS -->
+      <div class="panel portfolio-panel">
+        <div class="panel-header">
+          <h3>🧳 Mes positions</h3>
+          <div class="portfolio-totals" *ngIf="myPositions?.length">
+            <span>Total valeur: {{ getPortfolioValue() | currency:'EUR':'symbol':'1.2-2' }}</span>
+            <span [class.positive]="getPortfolioPnL() >= 0" [class.negative]="getPortfolioPnL() < 0">
+              PnL non réalisé:
+              {{ getPortfolioPnL() | number:'1.2-2' }} €
+              ({{ getPortfolioPnLPercent() | number:'1.2-2' }}%)
             </span>
           </div>
         </div>
 
-        <!-- Erreur -->
-        <div class="order-error" *ngIf="lastOrderError">
-          ⚠️ {{ lastOrderError }}
+        <div class="positions-table" *ngIf="myPositions?.length; else noPos">
+          <div class="positions-header">
+            <span>Symbole</span>
+            <span class="right">Qté</span>
+            <span class="right">PRU</span>
+            <span class="right">Prix</span>
+            <span class="right">Valeur</span>
+            <span class="right">PnL €</span>
+            <span class="right">PnL %</span>
+          </div>
+
+          <div class="positions-row" *ngFor="let p of myPositions; trackBy: trackBySymbol">
+            <span class="sym">{{ p.symbol }}</span>
+            <span class="right">{{ p.quantity | number:'1.0-0' }}</span>
+            <span class="right">{{ p.avgPrice | number:'1.2-2' }}</span>
+            <span class="right">{{ p.lastPrice | number:'1.2-2' }}</span>
+            <span class="right">{{ p.marketValue | number:'1.2-2' }}</span>
+            <span class="right" [class.positive]="p.unrealizedPnL >= 0" [class.negative]="p.unrealizedPnL < 0">
+              {{ p.unrealizedPnL | number:'1.2-2' }}
+            </span>
+            <span class="right" [class.positive]="p.unrealizedPnLPercent >= 0" [class.negative]="p.unrealizedPnLPercent < 0">
+              {{ p.unrealizedPnLPercent | number:'1.2-2' }}%
+            </span>
+          </div>
         </div>
 
-        <!-- Bouton d'action toujours actif -->
-        <button class="order-submit"
-                [class.buy]="orderSide === OrderSide.BUY"
-                [class.sell]="orderSide === OrderSide.SELL"
-                [disabled]="isPlacingOrder"
-                (click)="placeOrder()">
-          <span *ngIf="!isPlacingOrder">
-            {{ orderSide === OrderSide.BUY ? '🟢 Acheter' : '🔴 Vendre' }} 
-            {{ orderQuantity }} {{ selectedSymbol }}
-          </span>
-          <span *ngIf="isPlacingOrder">
-            ⏳ Traitement...
-          </span>
-        </button>
-
-        <!-- Info si pas possible de trader -->
-        <div class="trade-disabled-info" *ngIf="!canTrade()">
-          <small>
-            {{ session.status !== SessionStatus.OPEN 
-               ? 'La session n\'est pas ouverte' 
-               : 'Impossible de trader pour le moment' }}
-          </small>
-        </div>
+        <ng-template #noPos>
+          <div class="empty-state">
+            <em>Pas de positions pour le moment.</em>
+          </div>
+        </ng-template>
       </div>
     </div>
   </div>

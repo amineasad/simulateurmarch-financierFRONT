@@ -638,3 +638,113 @@
   display: block;
   height: 100%;
 }
+/* Right column stacking order form + portfolio */
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Portfolio styles */
+.portfolio-panel .panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.portfolio-totals {
+  display: flex;
+  gap: 16px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+.positions-table { display:flex; flex-direction:column; gap:6px; padding:8px 12px; }
+.positions-header, .positions-row {
+  display: grid;
+  grid-template-columns: 1.2fr .8fr .9fr .9fr 1fr .9fr .8fr;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.45);
+  font-family: 'Courier New', monospace;
+}
+.positions-header {
+  font-weight: 700;
+  color: #94a3b8;
+  background: rgba(30, 41, 59, 0.7);
+}
+.positions-row { color: #e2e8f0; }
+.positions-row .sym { font-weight: 700; }
+.right { text-align: right; }
+.positive { color:#22c55e; }
+.negative { color:#ef4444; }
+/* Laisser les colonnes d'un grid scroller en interne */
+.main-content > * { 
+  min-height: 0;              /* clé pour autoriser l’overflow dans un grid */
+}
+
+/* Colonne droite : structure */
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;              /* autorise l’enfant à scroller */
+  overflow: hidden;           /* on gère l’overflow à l’intérieur, pas ici */
+}
+
+/* Le formulaire reste en hauteur auto (fixe en haut) */
+.order-panel {
+  flex: 0 0 auto;
+}
+
+/* Le panneau "Mes positions" occupe le reste et scrolle */
+.portfolio-panel {
+  flex: 1 1 auto;
+  min-height: 0;              /* indispensable pour que overflow prenne effet */
+  overflow: auto;             /* <- le scroll est ici */
+}
+
+/* Optionnel : limiter la taille de l’entête & laisser la table scroller */
+.portfolio-panel .panel-header {
+  flex: 0 0 auto;
+}
+.positions-table {
+  flex: 1 1 auto;
+}
+/* ================= RÉDUCTION DU BLOC "PASSER UN ORDRE" ================= */
+.order-panel {
+  flex: 0 0 auto;
+  max-height: 420px;      /* 🔽 ajuste ici selon ton goût (ex: 380 / 420 / 450) */
+  overflow-y: auto;       /* permet de scroller si le contenu déborde */
+  padding-bottom: 8px;    /* petit espace bas pour esthétique */
+}
+
+.order-form {
+  gap: 10px;              /* réduit les espaces internes */
+  padding: 12px 16px;     /* plus compact */
+}
+
+.form-row label {
+  font-size: 11px;
+}
+
+.form-select,
+.form-input {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.order-submit {
+  font-size: 14px;
+  padding: 10px;
+}
+
+
+/* Astuce : si tu veux un scroll encore plus doux sur la table uniquement
+   décommente et garde overflow ici au lieu de .portfolio-panel
+.positions-table { 
+  overflow-y: auto; 
+}
+*/
+
+
+

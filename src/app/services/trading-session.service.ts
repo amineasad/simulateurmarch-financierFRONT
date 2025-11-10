@@ -165,4 +165,8 @@ triggerEvent(eventId: number): Observable<void> {
   getTotalVolume(sessionId: number): Observable<number> {
     return this.http.get<number>(`${this.API_URL}/orders/session/${sessionId}/volume`);
   }
+   getPositions(sessionId: number, userId: number) {
+    // endpoint backend ajouté ci-dessous
+    return this.http.get<any[]>(`${this.API_URL}/positions/session/${sessionId}/user/${userId}`);
+  }
 }

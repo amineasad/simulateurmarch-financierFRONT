@@ -30,6 +30,16 @@ interface ActivityItem {
   type: 'buy' | 'sell' | 'info';
 }
 
+type PositionRow = {
+  symbol: string;
+  quantity: number;
+  avgPrice: number;
+  lastPrice: number;
+  marketValue: number;
+  unrealizedPnL: number;
+  unrealizedPnLPercent: number;
+};
+
 @Component({
   selector: 'app-gaming-room',
   templateUrl: './gaming-room.component.html',
@@ -70,7 +80,8 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
   // Carnet d'ordres
   depth?: SessionOrderBookDepth;
   private depthStop$ = new Subject<void>();
-   // ✅ AJOUTER: Mapping vers TradingView
+
+  // Mapping vers TradingView
   private symbolMap: Record<string, string> = {
     'AAPL': 'NASDAQ:AAPL',
     'MSFT': 'NASDAQ:MSFT',
@@ -81,7 +92,6 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
     'NVDA': 'NASDAQ:NVDA',
     'NFLX': 'NASDAQ:NFLX'
   };
-  // ✅ AJOUTER: Getter pour TradingView
   get tradingViewSymbol(): string {
     return this.symbolMap[this.selectedSymbol] || 'NASDAQ:AAPL';
   }
@@ -90,8 +100,9 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
   isPlacingOrder = false;
   lastOrderError = '';
 
-  // Positions
-  myPositions: any[] = [];
+  // Positions (portfolio)
+  myPositions: PositionRow[] = [];
+  trackBySymbol = (_: number, p: PositionRow) => p.symbol;
 
   constructor(
     private route: ActivatedRoute,
@@ -127,7 +138,7 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
             changePercent: q.changePercent
           };
         }
-        
+
         // Mettre à jour le prix du formulaire pour LIMIT
         if (this.orderType === OrderType.LIMIT) {
           const currentPrice = this.marketData[this.selectedSymbol]?.price;
@@ -135,6 +146,9 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
             this.orderPrice = currentPrice;
           }
         }
+
+        // ✅ Recalcule live des PnL/valeurs des positions à chaque tick
+        this.recomputePositionsFromQuotes();
       }
     );
   }
@@ -180,8 +194,39 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
   }
 
   private loadPositions(): void {
-    // TODO: implémenter l'appel API pour récupérer les positions
-    // this.sessionService.getPositions(this.sessionId, this.currentUser.id)
+    this.sessionService
+      .getPositions(this.sessionId, this.currentUser.id)
+      .subscribe({
+        next: (rows: any[]) => {
+          this.myPositions = (rows || []).map(r =>
+            this.enrichPosition(r.symbol, r.quantity, r.avgPrice)
+          );
+          this.sortPositions();
+        },
+        error: (e) => {
+          console.error('Erreur chargement positions', e);
+        }
+      });
+  }
+
+  private enrichPosition(symbol: string, quantity: number, avgPrice: number): PositionRow {
+    const last = this.marketData[symbol]?.price ?? 0;
+    const value = quantity * last;
+    const pnl = (last - avgPrice) * quantity;
+    const pnlPct = avgPrice > 0 ? ((last - avgPrice) / avgPrice) * 100 : 0;
+    return { symbol, quantity, avgPrice, lastPrice: last, marketValue: value, unrealizedPnL: pnl, unrealizedPnLPercent: pnlPct };
+  }
+
+  private recomputePositionsFromQuotes(): void {
+    if (!this.myPositions?.length) return;
+    this.myPositions = this.myPositions.map(p =>
+      this.enrichPosition(p.symbol, p.quantity, p.avgPrice)
+    );
+    this.sortPositions();
+  }
+
+  private sortPositions(): void {
+    this.myPositions.sort((a, b) => b.marketValue - a.marketValue);
   }
 
   private loadRecentActivity(): void {
@@ -237,7 +282,6 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
   // ====== Carnet d'ordres ======
   private startDepthPolling(): void {
     this.depthStop$.next();
-
     if (!this.session) return;
 
     timer(0, 1500)
@@ -246,12 +290,8 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
         this.sessionOrderBookService
           .getDepth(this.sessionId, this.selectedSymbol, 10)
           .subscribe({
-            next: (d) => {
-              this.depth = d;
-            },
-            error: (e) => {
-              console.warn('Erreur carnet:', e);
-            }
+            next: (d) => { this.depth = d; },
+            error: (e) => { console.warn('Erreur carnet:', e); }
           });
       });
   }
@@ -260,7 +300,7 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
   selectSymbol(sym: string): void {
     this.selectedSymbol = sym;
     this.marketDataService.trackSymbol(sym);
-    
+
     const currentPrice = this.marketData[sym]?.price ?? 0;
     if (this.orderType === OrderType.LIMIT) {
       this.orderPrice = currentPrice;
@@ -278,37 +318,32 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
   }
 
   canTrade(): boolean {
-    return true
+    return true;
   }
 
   getEstimatedTotal(): number {
-    const price = this.orderType === OrderType.MARKET 
+    const price = this.orderType === OrderType.MARKET
       ? (this.marketData[this.selectedSymbol]?.price ?? 0)
       : this.orderPrice;
-    
     return this.orderQuantity * price;
   }
 
   placeOrder(): void {
     this.lastOrderError = '';
 
-    // Validations
     if (!this.selectedSymbol) {
       this.lastOrderError = 'Sélectionnez un symbole';
       return;
     }
-
     if (!this.orderQuantity || this.orderQuantity <= 0) {
       this.lastOrderError = 'Quantité invalide';
       return;
     }
-
     if (this.orderType === OrderType.LIMIT && (!this.orderPrice || this.orderPrice <= 0)) {
       this.lastOrderError = 'Prix limite invalide';
       return;
     }
 
-    // Vérification du cash pour les achats
     if (this.orderSide === OrderSide.BUY && this.myParticipation) {
       const estimatedCost = this.getEstimatedTotal();
       if (estimatedCost > this.myParticipation.cashActuel) {
@@ -337,34 +372,25 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
     this.sessionService.placeOrder(order).subscribe({
       next: (saved) => {
         this.isPlacingOrder = false;
-        
-        // Ajouter au feed
+
         const executionPrice = saved?.executionPrice ?? price;
         this.activityFeed.unshift({
           text: `${this.orderSide === OrderSide.BUY ? '🟢 Achat' : '🔴 Vente'} ${order.quantity} ${order.symbol} @ ${executionPrice.toFixed(2)}€`,
-          time: new Date().toLocaleTimeString('fr-FR', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-          }),
+          time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
           type: this.orderSide === OrderSide.BUY ? 'buy' : 'sell'
         });
         this.activityFeed = this.activityFeed.slice(0, 20);
 
-        // Rafraîchir les données
+        // Rafraîchir cash & positions
         this.loadParticipation();
         this.loadPositions();
-        
+
         // Rafraîchir immédiatement le carnet
         this.sessionOrderBookService
           .getDepth(this.sessionId, this.selectedSymbol, 10)
-          .subscribe({
-            next: (d) => {
-              this.depth = d;
-            }
-          });
+          .subscribe({ next: (d) => { this.depth = d; } });
 
-        // Message de succès
+        // Message
         if (saved.status === OrderStatus.EXECUTED) {
           this.showSuccessMessage('✅ Ordre exécuté avec succès !');
         } else if (saved.status === OrderStatus.REJECTED) {
@@ -382,7 +408,6 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
   }
 
   private showSuccessMessage(msg: string): void {
-    // Vous pouvez implémenter un toast/notification ici
     console.log(msg);
   }
 
@@ -408,6 +433,17 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
       default: return '';
     }
   }
-  
-  
+
+  // Portfolio totals
+  getPortfolioValue(): number {
+    return this.myPositions.reduce((sum, p) => sum + p.marketValue, 0);
+  }
+  getPortfolioPnL(): number {
+    return this.myPositions.reduce((sum, p) => sum + p.unrealizedPnL, 0);
+  }
+  getPortfolioPnLPercent(): number {
+    const invested = this.myPositions.reduce((sum, p) => sum + p.avgPrice * p.quantity, 0);
+    if (invested <= 0) return 0;
+    return (this.getPortfolioPnL() / invested) * 100;
+  }
 }
