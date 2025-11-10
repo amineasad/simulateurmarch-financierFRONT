@@ -34,6 +34,8 @@ import { PriceDisplayComponent } from './components/price-display/price-display.
 import { EducationComponent } from './components/education/education.component';
 import { EducationAdminComponent } from './components/education-admin/education-admin.component';
 import { SafeUrlPipe } from './pipes/safe-url.pipe'; 
+//salledejeu
+import { SessionOrderBookComponent } from './components/session-order-book/session-order-book.component';
 
 
 @NgModule({
@@ -62,6 +64,8 @@ GamingRoomComponent,
     EducationAdminComponent,
     NewsMarketComponent,
      SafeUrlPipe,
+     //salledejeu
+     SessionOrderBookComponent,
     
     // ← Ajout
   ],

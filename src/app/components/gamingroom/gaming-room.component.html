@@ -1,113 +1,239 @@
-<!-- src/app/components/gaming-room/gaming-room.component.html -->
+<!-- ================================================================ -->
+<!-- gaming-room.component.html -->
+<!-- ================================================================ -->
 <div class="gaming-room" *ngIf="session">
   <!-- TOP BAR -->
   <div class="top-bar">
     <div class="left">
-      <button class="btn" (click)="router.navigate(['/lobby'])">← Lobby</button>
-      <h1>{{ session.nom }}</h1>
-      <span class="code">Code: {{ session.codeAcces }}</span>
-    </div>
-    <div class="center">
-      <div class="timer">
-        <div class="label">Temps restant</div>
-        <div class="value">{{ timeRemaining }}</div>
-        <div class="bar"><div class="bar-fill" [style.width.%]="sessionProgress"></div></div>
+      <button class="btn-back" (click)="router.navigate(['/lobby'])">
+        ← Lobby
+      </button>
+      <div class="session-info">
+        <h1>{{ session.nom }}</h1>
+        <div class="meta">
+          <span class="code">Code: {{ session.codeAcces }}</span>
+          <span class="status" [style.background]="getStatusColor()">
+            {{ getStatusLabel() }}
+          </span>
+        </div>
       </div>
     </div>
+
+    <div class="center">
+      <div class="timer-widget">
+        <div class="timer-label">Temps restant</div>
+        <div class="timer-value">{{ timeRemaining }}</div>
+        <div class="timer-bar">
+          <div class="timer-bar-fill" [style.width.%]="sessionProgress"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="right">
-      <div class="balance" *ngIf="myParticipation">💰 {{ myParticipation.cashActuel | currency:'EUR':'symbol':'1.2-2' }}</div>
+      <div class="balance-card" *ngIf="myParticipation">
+        <div class="balance-label">Portefeuille</div>
+        <div class="balance-value">
+          {{ myParticipation.cashActuel | currency:'EUR':'symbol':'1.2-2' }}
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="main">
-    <!-- WATCHLIST -->
-    <div class="watchlist">
-      <div class="panel-title">Marché</div>
-      <div class="rows">
-        <div class="row" *ngFor="let s of symbols"
-             [class.selected]="s===selectedSymbol"
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    <!-- WATCHLIST (gauche) -->
+    <div class="panel watchlist-panel">
+      <div class="panel-header">
+        <h3>🎯 Marché</h3>
+      </div>
+      <div class="watchlist-content">
+        <div class="stock-row" 
+             *ngFor="let s of symbols"
+             [class.selected]="s === selectedSymbol"
              (click)="selectSymbol(s)">
-          <div class="sym">{{ s }}</div>
-          <div class="px">{{ marketData[s]?.price | number:'1.2-2' }}</div>
-          <div class="chg" [class.pos]="(marketData[s]?.changePercent||0)>=0"
-               [class.neg]="(marketData[s]?.changePercent||0)<0">
+          <div class="stock-symbol">{{ s }}</div>
+          <div class="stock-price">
+            {{ marketData[s]?.price | number:'1.2-2' }}
+          </div>
+          <div class="stock-change"
+               [class.positive]="(marketData[s]?.changePercent || 0) >= 0"
+               [class.negative]="(marketData[s]?.changePercent || 0) < 0">
+            <span class="change-icon">
+              {{ (marketData[s]?.changePercent || 0) >= 0 ? '▲' : '▼' }}
+            </span>
+            {{ (marketData[s]?.changePercent || 0) >= 0 ? '+' : '' }}
             {{ (marketData[s]?.changePercent || 0) | number:'1.2-2' }}%
           </div>
         </div>
       </div>
     </div>
 
-    <!-- CHART + FEED -->
-    <div class="center">
-      <div class="chart">
-        <!-- Si tu as déjà le TradingView chart -->
-        <app-price-chart [symbol]="selectedSymbol"></app-price-chart>
-        <!-- Sinon, un placeholder:
-        <div class="placeholder">Chart {{selectedSymbol}}</div>
-        -->
+    <!-- CENTER (chart + orderbook + activity) -->
+    <div class="center-section">
+      <!-- CHART -->
+      <div class="panel chart-panel">
+        <div class="panel-header">
+          <h3>📈 {{ selectedSymbol }}</h3>
+          <div class="current-price">
+            {{ marketData[selectedSymbol]?.price | number:'1.2-2' }} EUR
+            <span class="price-change"
+                  [class.positive]="(marketData[selectedSymbol]?.changePercent || 0) >= 0"
+                  [class.negative]="(marketData[selectedSymbol]?.changePercent || 0) < 0">
+              {{ (marketData[selectedSymbol]?.change || 0) >= 0 ? '+' : '' }}
+              {{ (marketData[selectedSymbol]?.change || 0) | number:'1.2-2' }}
+              (
+                {{ (marketData[selectedSymbol]?.changePercent || 0) >= 0 ? '+' : '' }}
+                {{ (marketData[selectedSymbol]?.changePercent || 0) | number:'1.2-2' }}%
+              )
+            </span>
+          </div>
+        </div>
+        <div class="chart-content">
+          <app-price-chart 
+            [symbol]="tradingViewSymbol"
+            [interval]="'1'"
+            [theme]="'dark'"
+            [autosize]="true">
+          </app-price-chart>
+        </div>
       </div>
 
-      <div class="feed">
-        <div class="panel-title">Activité récente</div>
-        <div *ngIf="activityFeed.length===0" class="empty">Aucune activité</div>
-        <div class="item" *ngFor="let it of activityFeed">
-          <span class="t">{{ it.time }}</span> — {{ it.text }}
+      <!-- ORDER BOOK -->
+      <div class="panel orderbook-panel">
+        <app-session-order-book [depth]="depth"></app-session-order-book>
+      </div>
+
+      <!-- ACTIVITY FEED -->
+      <div class="panel activity-panel">
+        <div class="panel-header">
+          <h3>📊 Activité récente</h3>
+        </div>
+        <div class="activity-content">
+          <div class="empty-state" *ngIf="activityFeed.length === 0">
+            <em>Aucune activité pour le moment</em>
+          </div>
+          <div class="activity-item" 
+               *ngFor="let item of activityFeed"
+               [class.buy]="item.type === 'buy'"
+               [class.sell]="item.type === 'sell'">
+            <span class="activity-time">{{ item.time }}</span>
+            <span class="activity-text">{{ item.text }}</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- ORDER -->
-    <div class="order">
-      <div class="panel-title">Passer un ordre</div>
-
-      <div class="line">
-        <label>Symbole</label>
-        <div class="value">{{ selectedSymbol }}</div>
+    <!-- ORDER FORM (droite) -->
+    <div class="panel order-panel">
+      <div class="panel-header">
+        <h3>💼 Passer un ordre</h3>
       </div>
 
-      <div class="line">
-        <label>Type</label>
-        <select [(ngModel)]="orderType">
-          <option [ngValue]="OrderType.MARKET">Marché</option>
-          <option [ngValue]="OrderType.LIMIT">Limite</option>
-        </select>
-      </div>
+      <div class="order-form">
+        <!-- Symbole -->
+        <div class="form-row">
+          <label>Symbole</label>
+          <div class="symbol-display">{{ selectedSymbol }}</div>
+        </div>
 
-      <div class="line">
-        <label>Side</label>
-        <div class="toggle">
-          <button [class.active]="orderSide===OrderSide.BUY" (click)="orderSide=OrderSide.BUY">Acheter</button>
-          <button [class.active]="orderSide===OrderSide.SELL" (click)="orderSide=OrderSide.SELL">Vendre</button>
+        <!-- Type d'ordre -->
+        <div class="form-row">
+          <label>Type d'ordre</label>
+          <select [(ngModel)]="orderType" (change)="onOrderTypeChange()" class="form-select">
+            <option [ngValue]="OrderType.MARKET">🚀 Marché</option>
+            <option [ngValue]="OrderType.LIMIT">🎯 Limite</option>
+          </select>
+        </div>
+
+        <!-- Side (Achat/Vente) -->
+        <div class="form-row">
+          <label>Action</label>
+          <div class="side-toggle">
+            <button class="side-btn buy"
+                    [class.active]="orderSide === OrderSide.BUY"
+                    (click)="orderSide = OrderSide.BUY">
+              🟢 Acheter
+            </button>
+            <button class="side-btn sell"
+                    [class.active]="orderSide === OrderSide.SELL"
+                    (click)="orderSide = OrderSide.SELL">
+              🔴 Vendre
+            </button>
+          </div>
+        </div>
+
+        <!-- Quantité -->
+        <div class="form-row">
+          <label>Quantité</label>
+          <input type="number" 
+                 min="1" 
+                 [(ngModel)]="orderQuantity"
+                 class="form-input"
+                 placeholder="10">
+        </div>
+
+        <!-- Prix limite (si LIMIT) -->
+        <div class="form-row" *ngIf="orderType === OrderType.LIMIT">
+          <label>Prix limite</label>
+          <input type="number" 
+                 step="0.01" 
+                 min="0.01"
+                 [(ngModel)]="orderPrice"
+                 class="form-input"
+                 placeholder="100.00">
+        </div>
+
+        <!-- Estimation -->
+        <div class="order-summary">
+          <div class="summary-row">
+            <span>Total estimé</span>
+            <span class="summary-value">
+              {{ getEstimatedTotal() | currency:'EUR':'symbol':'1.2-2' }}
+            </span>
+          </div>
+          <div class="summary-row" *ngIf="myParticipation && orderSide === OrderSide.BUY">
+            <span>Cash disponible</span>
+            <span class="summary-value">
+              {{ myParticipation.cashActuel | currency:'EUR':'symbol':'1.2-2' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Erreur -->
+        <div class="order-error" *ngIf="lastOrderError">
+          ⚠️ {{ lastOrderError }}
+        </div>
+
+        <!-- Bouton d'action toujours actif -->
+        <button class="order-submit"
+                [class.buy]="orderSide === OrderSide.BUY"
+                [class.sell]="orderSide === OrderSide.SELL"
+                [disabled]="isPlacingOrder"
+                (click)="placeOrder()">
+          <span *ngIf="!isPlacingOrder">
+            {{ orderSide === OrderSide.BUY ? '🟢 Acheter' : '🔴 Vendre' }} 
+            {{ orderQuantity }} {{ selectedSymbol }}
+          </span>
+          <span *ngIf="isPlacingOrder">
+            ⏳ Traitement...
+          </span>
+        </button>
+
+        <!-- Info si pas possible de trader -->
+        <div class="trade-disabled-info" *ngIf="!canTrade()">
+          <small>
+            {{ session.status !== SessionStatus.OPEN 
+               ? 'La session n\'est pas ouverte' 
+               : 'Impossible de trader pour le moment' }}
+          </small>
         </div>
       </div>
-
-      <div class="line">
-        <label>Quantité</label>
-        <input type="number" min="1" [(ngModel)]="orderQuantity">
-      </div>
-
-      <div class="line" *ngIf="orderType===OrderType.LIMIT">
-        <label>Prix limite</label>
-        <input type="number" step="0.01" [(ngModel)]="orderPrice">
-      </div>
-
-      <div class="summary">
-        Total estimé :
-        <b>
-          {{
-            orderQuantity *
-            (orderType===OrderType.MARKET
-              ? (marketData[selectedSymbol]?.price || 0)
-              : orderPrice)
-            | currency:'EUR':'symbol':'1.2-2'
-          }}
-        </b>
-      </div>
-
-      <button class="btn-cta" (click)="placeOrder()"
-              [disabled]="session.status !== SessionStatus.OPEN">
-        {{ orderSide===OrderSide.BUY ? 'Acheter' : 'Vendre' }} {{ orderQuantity }} {{ selectedSymbol }}
-      </button>
     </div>
   </div>
+</div>
+
+<!-- Loading state -->
+<div class="loading-screen" *ngIf="!session">
+  <div class="spinner"></div>
+  <p>Chargement de la session...</p>
 </div>

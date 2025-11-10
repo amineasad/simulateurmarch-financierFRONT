@@ -1,0 +1,68 @@
+<div class="orderbook-wrapper">
+  <!-- Header -->
+  <div class="orderbook-header">
+    <h3>📖 Carnet d'ordres</h3>
+    <div class="last-price" *ngIf="depth && depth.lastPrice > 0">
+      <span class="label">Dernier</span>
+      <span class="value">{{ depth.lastPrice | number:'1.2-2' }}</span>
+    </div>
+  </div>
+
+  <!-- Contenu du carnet -->
+  <div class="orderbook-content" *ngIf="depth && (depth.bids.length > 0 || depth.asks.length > 0)">
+    <div class="orderbook-grid">
+      
+      <!-- Colonne BIDS (Acheteurs) -->
+      <div class="orderbook-side bids-side">
+        <div class="side-header">
+          <span>Prix(BID)</span>
+          <span>Quantité</span>
+        </div>
+        
+        <div class="levels-container">
+          <div class="level bid-level" *ngFor="let b of depth.bids; trackBy: trackByPrice">
+            <div class="level-background bid-bg" [style.width.%]="getBidWidth(b.quantity)"></div>
+            <div class="level-content">
+              <span class="level-price">{{ b.price | number:'1.2-2' }}</span>
+              <span class="level-qty">{{ b.quantity }}</span>
+            </div>
+          </div>
+          
+          <div class="empty-message" *ngIf="depth.bids.length === 0">
+            <em>Aucun acheteur</em>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonne ASKS (Vendeurs) -->
+      <div class="orderbook-side asks-side">
+        <div class="side-header">
+          <span>Prix(ASK)</span>
+          <span>Quantité</span>
+        </div>
+        
+        <div class="levels-container">
+          <div class="level ask-level" *ngFor="let a of depth.asks; trackBy: trackByPrice">
+            <div class="level-background ask-bg" [style.width.%]="getAskWidth(a.quantity)"></div>
+            <div class="level-content">
+              <span class="level-price">{{ a.price | number:'1.2-2' }}</span>
+              <span class="level-qty">{{ a.quantity }}</span>
+            </div>
+          </div>
+          
+          <div class="empty-message" *ngIf="depth.asks.length === 0">
+            <em>Aucun vendeur</em>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- État vide -->
+  <div class="orderbook-empty" *ngIf="!depth || (depth.bids.length === 0 && depth.asks.length === 0)">
+    <div class="empty-icon">📭</div>
+    <p>Carnet d'ordres vide</p>
+    <small>Soyez le premier à placer un ordre !</small>
+  </div>
+</div>

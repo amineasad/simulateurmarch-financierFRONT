@@ -58,3 +58,16 @@ export interface MarketUpdate {
   executedOrder?: Order;
   message: string;
 }
+// src/app/models/market.model.ts (ou un fichier dédié)
+// src/app/models/market.model.ts
+export interface SessionOrderBookEntry {
+  price: number;
+  quantity: number;
+}
+
+export interface SessionOrderBookDepth {
+  bids: SessionOrderBookEntry[];
+  asks: SessionOrderBookEntry[];
+  lastPrice: number;
+}
+

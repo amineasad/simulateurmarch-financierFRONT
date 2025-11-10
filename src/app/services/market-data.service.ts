@@ -1,47 +1,59 @@
 // src/app/services/market-data.service.ts
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, interval, Subscription } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
 
 export interface Quote {
-  price: number;         // last
-  change: number;        // delta absolu
-  changePercent: number; // delta %
+  price: number;
+  change: number;
+  changePercent: number;
   prevClose?: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class MarketDataService {
-  // ⚠️ Mets ta clé ici (tu peux réutiliser la même que la trading room)
-  private readonly FINNHUB_KEY = 'd45afohr01qsugt9fes0d45afohr01qsugt9fesg';
-  private readonly BASE = 'https://finnhub.io/api/v1';
-
-  private symbols = new Set<string>();
   private quotes$ = new BehaviorSubject<Record<string, Quote>>({});
   private pollSub?: Subscription;
+  private symbols: string[] = [];
 
-  constructor(private http: HttpClient) {}
+  constructor() {}
 
-  startPolling(initialSymbols: string[], ms = 5000) {
-    initialSymbols.forEach(s => this.symbols.add(s));
+  startPolling(initialSymbols: string[], ms = 2000): void {
+    this.symbols = initialSymbols;
     this.stopPolling();
-    this.pollSub = interval(ms)
-      .pipe(switchMap(() => this.fetchAll()))
-      .subscribe(map => this.quotes$.next(map));
-    // premier tir immédiat
-    this.fetchAll().subscribe(map => this.quotes$.next(map));
+
+    const init: Record<string, Quote> = {};
+    for (const s of this.symbols) {
+      const startPrice = 100 + Math.random() * 100;
+      init[s] = { price: startPrice, change: 0, changePercent: 0, prevClose: startPrice };
+    }
+    this.quotes$.next(init);
+
+    this.pollSub = interval(ms).subscribe(() => {
+      const updated = { ...this.quotes$.value };
+      for (const sym of this.symbols) {
+        const last = updated[sym]?.price ?? 100;
+        const prevClose = updated[sym]?.prevClose ?? last;
+        const variation = (Math.random() - 0.5) * 3; // variation +/- 1.5%
+        const newPrice = Math.max(1, last + variation);
+        const change = newPrice - prevClose;
+        const changePercent = (change / prevClose) * 100;
+        updated[sym] = { price: newPrice, change, changePercent, prevClose };
+      }
+      this.quotes$.next(updated);
+    });
   }
 
-  stopPolling() {
+  stopPolling(): void {
     this.pollSub?.unsubscribe();
-    this.pollSub = undefined;
   }
 
-  trackSymbol(s: string) {
-    if (!this.symbols.has(s)) {
-      this.symbols.add(s);
-      this.fetchAll().subscribe(map => this.quotes$.next(map));
+  trackSymbol(symbol: string): void {
+    if (!this.symbols.includes(symbol)) {
+      this.symbols.push(symbol);
+      const updated = { ...this.quotes$.value };
+      const startPrice = 100 + Math.random() * 100;
+      updated[symbol] = { price: startPrice, change: 0, changePercent: 0, prevClose: startPrice };
+      this.quotes$.next(updated);
     }
   }
 
@@ -49,47 +61,7 @@ export class MarketDataService {
     return this.quotes$.asObservable();
   }
 
-  private fetchAll(): Observable<Record<string, Quote>> {
-    const symbols = Array.from(this.symbols);
-    if (symbols.length === 0) return new BehaviorSubject({}).asObservable();
-
-    // On fait un “batch” simple: plusieurs requêtes /quote, puis on assemble.
-    // Tu peux optimiser (throttle, etc.) si besoin.
-    const requests = symbols.map(sym =>
-      this.http.get<any>(`${this.BASE}/quote`, {
-        params: { symbol: sym, token: this.FINNHUB_KEY }
-      })
-    );
-
-    return new Observable<Record<string, Quote>>(sub => {
-      const acc: Record<string, Quote> = {};
-      let done = 0;
-      requests.forEach((obs, i) => {
-        obs.subscribe({
-          next: (r) => {
-            const sym = symbols[i];
-            // Finnhub: c = current, d = change, dp = change%
-            acc[sym] = {
-              price: r.c ?? 0,
-              change: r.d ?? 0,
-              changePercent: r.dp ?? 0,
-              prevClose: r.pc
-            };
-          },
-          error: () => {
-            // fallback: garde la dernière valeur si erreur
-            const last = this.quotes$.value[symbols[i]];
-            if (last) acc[symbols[i]] = last;
-          },
-          complete: () => {
-            done++;
-            if (done === requests.length) {
-              sub.next(acc);
-              sub.complete();
-            }
-          }
-        });
-      });
-    });
+  getCurrentPrice(symbol: string): number {
+    return this.quotes$.value[symbol]?.price ?? 0;
   }
 }
