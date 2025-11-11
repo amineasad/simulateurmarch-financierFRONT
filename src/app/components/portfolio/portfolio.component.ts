@@ -1,10 +1,13 @@
 // src/app/components/portfolio/portfolio.component.ts
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { TradingService } from '../../services/trading.service';
 import { WalletService } from '../../services/wallet.service';
 import { AuthService } from '../../services/auth.service';
+import { PortfolioApi, PortfolioSnapshot } from '../../services/portfolio.api';
+import { WebsocketService } from '../../services/websocket.service';
+import { Subscription, interval } from 'rxjs';
 
 interface Position {
   symbol: string;
@@ -29,11 +32,12 @@ interface PendingOrder {
   templateUrl: './portfolio.component.html',
   styleUrls: ['./portfolio.component.css']
 })
-export class PortfolioComponent implements OnInit {
+export class PortfolioComponent implements OnInit, OnDestroy {
   
   portfolio: Position[] = [];
   pendingOrders: PendingOrder[] = []; // ← NOUVEAU
   cashAvailable: number = 0;
+  reservedCash: number = 0;
   totalPortfolioValue: number = 0;
   totalPnL: number = 0;
   
@@ -41,23 +45,49 @@ export class PortfolioComponent implements OnInit {
   successMessage = '';
   errorMessage = '';
 
+  private refreshSub?: Subscription;
+  private tradesSub?: Subscription;
+
   constructor(
     private router: Router,
     private tradingService: TradingService,
     private walletService: WalletService,
-    private authService: AuthService
+    private authService: AuthService,
+    private portfolioApi: PortfolioApi,
+    private ws: WebsocketService
   ) {}
 
   ngOnInit(): void {
     this.loadPortfolio();
     this.loadWallet();
     this.loadPendingOrders(); // ← NOUVEAU
+
+    // Rafraîchissement périodique
+    this.refreshSub = interval(5000).subscribe(() => this.loadPortfolio());
+
+    // Rafraîchir à chaque transaction utilisateur
+    const userId = this.authService.getUserId();
+    if (userId) {
+      this.tradesSub = this.ws.subscribe(`/topic/transactions/${userId}`).subscribe(() => {
+        this.loadPortfolio();
+        this.loadWallet();
+      });
+    }
   }
 
   loadPortfolio(): void {
-    this.tradingService.getPortfolio().subscribe({
-      next: (portfolio) => {
-        this.portfolio = portfolio;
+    this.portfolioApi.getPortfolio().subscribe({
+      next: (snap: PortfolioSnapshot) => {
+        // Mapper vers l'UI existante basée sur symbol si nécessaire
+        // Ici, on garde la structure Position{symbol, quantity, avgPrice, currentPrice}
+        this.portfolio = (snap.positions || []).map(p => ({
+          symbol: String(p.assetId),
+          quantity: p.quantity,
+          avgPrice: p.avgPrice,
+          currentPrice: p.marketPrice ?? p.avgPrice
+        }));
+        this.cashAvailable = snap.cash;
+        this.reservedCash = snap.reservedCash;
         this.calculatePortfolioStats();
         this.isLoading = false;
       },
@@ -80,6 +110,11 @@ export class PortfolioComponent implements OnInit {
         console.error('Erreur chargement wallet:', error);
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
+    this.tradesSub?.unsubscribe();
   }
 
   /**

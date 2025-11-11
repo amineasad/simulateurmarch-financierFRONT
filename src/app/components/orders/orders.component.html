@@ -1,6 +1,10 @@
 <!-- src/app/components/orders/orders.component.html -->
 
 <div class="orders-container">
+  <!-- Bandeau HALTED -->
+  <div *ngIf="marketState === 'HALTED'" style="background:#fecaca;color:#991b1b;padding:8px 12px;border-radius:6px;margin-bottom:12px;border:1px solid #fca5a5;">
+    🚨 Marché en pause (HALTED) — Les ordres sont temporairement désactivés.
+  </div>
   
   <!-- Header -->
   <div class="orders-header">
@@ -131,7 +135,7 @@
       class="btn-submit"
       [class.buy]="orderForm.side === 'BUY'"
       [class.sell]="orderForm.side === 'SELL'"
-      [disabled]="isLoading"
+      [disabled]="isLoading || marketState === 'HALTED' || orderForm.quantity <= 0 || (orderForm.type !== 'MARKET' && orderForm.price <= 0)"
       (click)="placeOrder()">
       <span *ngIf="!isLoading">
         {{ orderForm.side === 'BUY' ? '🟢 ACHETER' : '🔴 VENDRE' }} {{ orderForm.symbol }}

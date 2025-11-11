@@ -2,89 +2,73 @@
 
 import { Injectable } from '@angular/core';
 import { Observable, Subject, BehaviorSubject } from 'rxjs';
+import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class WebsocketService {
-  private connected$ = new BehaviorSubject<boolean>(true); // ← true directement
-  private marketUpdates$ = new Subject<any>();
-  private chatMessages$ = new Subject<any>();
-  
-  constructor() {
-    console.log('🔧 WebSocket Service en mode MOCK (pas de backend nécessaire)');
-  }
+  private client: Client | null = null;
+  private connected$ = new BehaviorSubject<boolean>(false);
 
-  connect(): Promise<void> {
-    return new Promise((resolve) => {
-      console.log('✅ Mode MOCK activé - Backend non requis');
-      this.connected$.next(true);
-      
-      // Simuler des mises à jour de prix toutes les 5 secondes
-      setInterval(() => {
-        const symbols = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'META'];
-        const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
-        const mockUpdate = {
-          symbol: randomSymbol,
-          price: 150 + Math.random() * 100,
-          change: (Math.random() - 0.5) * 5,
-          message: 'Mise à jour du prix (simulé)'
-        };
-        this.marketUpdates$.next(mockUpdate);
-      }, 5000);
-      
-      resolve();
+  private ensureClient() {
+    if (this.client) return;
+    this.client = new Client({
+      brokerURL: undefined,
+      webSocketFactory: () => new SockJS(`${environment.WS_BASE}/ws`),
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
+      reconnectDelay: 1000,
+      debug: (msg) => console.log('[STOMP]', msg),
+      onConnect: () => this.connected$.next(true),
+      onStompError: (frame) => console.error('STOMP error', frame.headers, frame.body),
+      onWebSocketClose: () => this.connected$.next(false),
     });
   }
 
-  sendOrder(order: any): void {
-    console.log('📤 Ordre envoyé (mode MOCK):', order);
-    
-    // Simuler une réponse après 1 seconde
-    setTimeout(() => {
-      const response = {
-        symbol: order.symbol,
-        price: order.price,
-        executedOrder: { 
-          ...order, 
-          id: 'ORDER-' + Date.now(),
-          status: 'EXECUTED',
-          timestamp: new Date()
-        },
-        message: `✅ Ordre ${order.side} de ${order.quantity} ${order.symbol} exécuté à ${order.price}€`
-      };
-      this.marketUpdates$.next(response);
-    }, 1000);
-  }
-
-  sendChatMessage(message: string, username: string): void {
-    console.log('💬 Message chat (mode MOCK):', message);
-    const chatMsg = {
-      user: username,
-      message: message,
-      time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-    };
-    this.chatMessages$.next(chatMsg);
-  }
-
-  getMarketUpdates(): Observable<any> {
-    return this.marketUpdates$.asObservable();
-  }
-
-  getChatMessages(): Observable<any> {
-    return this.chatMessages$.asObservable();
-  }
-
-  getConnectionStatus(): Observable<boolean> {
-    return this.connected$.asObservable();
+  connect(): void {
+    this.ensureClient();
+    if (!this.client) return;
+    if (this.client.active) return;
+    this.client.activate();
   }
 
   disconnect(): void {
-    console.log('🔌 Déconnexion (mode MOCK)');
-    this.connected$.next(false);
+    if (!this.client) return;
+    this.client.deactivate();
   }
 
-  isConnected(): boolean {
-    return this.connected$.value;
+  connection$(): Observable<boolean> {
+    return this.connected$.asObservable();
+  }
+
+  subscribe<T = any>(topic: string): Observable<T> {
+    this.connect();
+    const stream = new Subject<T>();
+    const attempt = () => {
+      if (!this.client) return;
+      if (!this.client.connected) {
+        const sub = this.connection$().subscribe((ok) => {
+          if (ok) {
+            sub.unsubscribe();
+            attempt();
+          }
+        });
+        return;
+      }
+      const subscription: StompSubscription = this.client.subscribe(topic, (msg: IMessage) => {
+        try {
+          const data = JSON.parse(msg.body);
+          stream.next(data as T);
+        } catch {
+          // @ts-ignore
+          stream.next(msg.body);
+        }
+      });
+    };
+    attempt();
+    return stream.asObservable();
   }
 }

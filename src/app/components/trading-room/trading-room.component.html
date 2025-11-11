@@ -103,34 +103,8 @@
         <app-price-chart [symbol]="selectedSymbol"></app-price-chart>
       </div>
 
-      <!-- Order Book -->
-      <div class="order-book">
-        <div class="order-book-header">CARNET D'ORDRES</div>
-        <div class="order-book-content">
-          <!-- Bids -->
-          <div class="order-book-side">
-            <div class="order-book-titles">
-              <span>PRIX (BID)</span>
-              <span>QUANTITÉ</span>
-            </div>
-            <div class="order-entry bid" *ngFor="let bid of orderBook.bids">
-              <span class="price">{{ bid.price | number:'1.2-2' }}</span>
-              <span class="quantity">{{ bid.quantity }}</span>
-            </div>
-          </div>
-          <!-- Asks -->
-          <div class="order-book-side">
-            <div class="order-book-titles">
-              <span>PRIX (ASK)</span>
-              <span>QUANTITÉ</span>
-            </div>
-            <div class="order-entry ask" *ngFor="let ask of orderBook.asks">
-              <span class="price">{{ ask.price | number:'1.2-2' }}</span>
-              <span class="quantity">{{ ask.quantity }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Order Book (temps réel via WS) -->
+      <app-orderbook [assetId]="1" [depth]="10"></app-orderbook>
 
     </div>
 

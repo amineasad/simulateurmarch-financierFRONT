@@ -1,20 +1,20 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { TradingRoomComponent } from './components/trading-room/trading-room.component';
 import { PriceChartComponent } from './components/price-chart/price-chart.component';
 import { GameLobbyComponent } from './components/game-lobby/game-lobby.component';
-import { GameRoomComponent } from './components/game-room/game-room.component'; // ← Ajout
+import { GameRoomComponent } from './components/game-room/game-room.component';
 
 // Services
 import { WebsocketService } from './services/websocket.service';
 import { TradingService } from './services/trading.service';
 import { GameService } from './services/game.service';
+import { AuthInterceptor } from './services/auth.interceptor';
 import { LoginComponent } from './components/auth/login/login.component';
 import { WalletManagementComponent } from './components/wallet/wallet-management/wallet-management.component';
 import { SuccessComponent } from './components/wallet/success/success.component';
@@ -25,6 +25,14 @@ import { SignupChoiceComponent } from './components/signup-choice/signup-choice.
 import { SignupStudentComponent } from './components/signup-student/signup-student.component';
 import { SignupIndividualComponent } from './components/signup-individual/signup-individual.component';
 import { SignupCompanyComponent } from './components/signup-company/signup-company.component';
+import { OrderbookComponent } from './components/orderbook/orderbook.component';
+
+export const APP_IMPORTS = [
+  BrowserModule,
+  AppRoutingModule,
+  HttpClientModule,
+  FormsModule
+];
 
 @NgModule({
   declarations: [
@@ -34,7 +42,6 @@ import { SignupCompanyComponent } from './components/signup-company/signup-compa
     GameLobbyComponent,
     GameRoomComponent,
     LoginComponent,
-
     WalletManagementComponent,
     SuccessComponent,
     OrdersComponent,
@@ -43,19 +50,20 @@ import { SignupCompanyComponent } from './components/signup-company/signup-compa
     SignupChoiceComponent,
     SignupStudentComponent,
     SignupIndividualComponent,
-    SignupCompanyComponent // ← Ajout
+    SignupCompanyComponent,
+    OrderbookComponent
   ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    HttpClientModule,
-    FormsModule,
-    CommonModule
-  ],
+ imports: [
+  BrowserModule,
+  AppRoutingModule,
+  HttpClientModule,
+  FormsModule
+],
   providers: [
     WebsocketService,
     TradingService,
-    GameService
+    GameService,
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
   ],
   bootstrap: [AppComponent]
 })

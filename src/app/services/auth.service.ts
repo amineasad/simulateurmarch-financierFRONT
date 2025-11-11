@@ -4,6 +4,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 // ✅ Interface User modifiée avec tous les nouveaux champs
 export interface User {
@@ -46,7 +47,7 @@ export interface LoginRequest {
 })
 export class AuthService {
   
-  private apiUrl = 'http://localhost:9090/examen/api/auth'; // ✅ CORRIGÉ : /examen retiré
+  private apiUrl = `${environment.API_BASE}/api/auth`;
   
   constructor(private http: HttpClient) {}
   
@@ -58,9 +59,16 @@ export class AuthService {
   // Connexion
   login(email: string, password: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/login`, { email, password }).pipe(
-      tap(user => {
-        // Stocker l'utilisateur dans localStorage
-        localStorage.setItem('currentUser', JSON.stringify(user));
+      tap(res => {
+        // Supporter à la fois {token} et {user, token}
+        if (res?.token) {
+          localStorage.setItem('authToken', res.token);
+        }
+        if (res?.user) {
+          localStorage.setItem('currentUser', JSON.stringify(res.user));
+        } else {
+          localStorage.setItem('currentUser', JSON.stringify(res));
+        }
       })
     );
   }
@@ -68,6 +76,7 @@ export class AuthService {
   // Déconnexion
   logout(): void {
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('authToken');
   }
   
   // Vérifier si l'utilisateur est connecté
@@ -79,5 +88,25 @@ export class AuthService {
   getCurrentUser(): User | null {
     const userStr = localStorage.getItem('currentUser');
     return userStr ? JSON.parse(userStr) : null;
+  }
+
+  // Token
+  getToken(): string | null {
+    return localStorage.getItem('authToken');
+  }
+
+  // Décoder le userId depuis le JWT si présent
+  getUserId(): number | null {
+    const user = this.getCurrentUser();
+    if (user?.id) return Number(user.id);
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1] || ''));
+      const id = payload['sub'] || payload['userId'] || payload['id'];
+      return id ? Number(id) : null;
+    } catch {
+      return null;
+    }
   }
 }

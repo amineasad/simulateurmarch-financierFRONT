@@ -1,0 +1,50 @@
+<div class="card p-3">
+  <div class="flex items-center justify-between mb-2">
+    <h3 class="text-sm font-semibold text-gray-300">Carnet d’ordres</h3>
+    <span class="text-xs text-gray-500">Profondeur: {{ depth }}</span>
+  </div>
+
+  @if (!snapshot) {
+    <div class="py-8 flex items-center justify-center text-gray-400">
+      <span class="animate-spin h-4 w-4 border-2 border-gray-500 border-t-transparent rounded-full mr-2"></span>
+      En attente de données du serveur…
+    </div>
+  } @else {
+    <div class="grid grid-cols-2 gap-2 h-[280px] overflow-y-auto">
+      <table class="w-full text-xs">
+        <thead class="text-gray-400">
+          <tr>
+            <th class="text-left">Prix</th>
+            <th class="text-right">Qté</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (b of bids; track $index) {
+            <tr class="transition-colors">
+              <td class="text-emerald-400">{{ b.price }}</td>
+              <td class="text-right">{{ b.qty }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <table class="w-full text-xs">
+        <thead class="text-gray-400">
+          <tr>
+            <th class="text-left">Prix</th>
+            <th class="text-right">Qté</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of asks; track $index) {
+            <tr class="transition-colors">
+              <td class="text-rose-400">{{ a.price }}</td>
+              <td class="text-right">{{ a.qty }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+

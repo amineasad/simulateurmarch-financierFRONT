@@ -1,6 +1,7 @@
 // src/app/components/orders/orders.component.ts
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, Inject } from '@angular/core';
+import { MarketStateService, MarketState } from '../../services/market-state.service';
 import { Router } from '@angular/router';
 import { TradingService } from '../../services/trading.service';
 import { AuthService } from '../../services/auth.service';
@@ -18,10 +19,10 @@ interface Order {
 @Component({
   selector: 'app-orders',
   templateUrl: './orders.component.html',
-  styleUrls: ['./orders.component.css']
+  styleUrls: ['./orders.component.css'],
 })
-export class OrdersComponent implements OnInit {
-  
+export class OrdersComponent implements OnInit, OnDestroy {
+
   orderForm: Order = {
     userId: '',
     symbol: 'AAPL',
@@ -36,12 +37,15 @@ export class OrdersComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
   isLoading = false;
+  marketState: MarketState = 'OPEN';
+  private marketStateSub?: any;
 
   constructor(
-    private router: Router,
+    @Inject(Router) private router: Router,
     private tradingService: TradingService,
     private authService: AuthService,
-    private walletService: WalletService
+    private walletService: WalletService,
+    private marketStateService: MarketStateService
   ) {}
 
   ngOnInit(): void {
@@ -61,6 +65,11 @@ export class OrdersComponent implements OnInit {
 
     // Charger le cash disponible
     this.loadCash();
+
+    // État du marché pour l'asset sélectionné
+    this.marketStateSub = this.marketStateService.getState$().subscribe(state => {
+      this.marketState = state;
+    });
   }
 
   loadAssetInfo(): void {
@@ -89,7 +98,7 @@ export class OrdersComponent implements OnInit {
 
   changeOrderType(type: 'MARKET' | 'LIMIT' | 'STOP'): void {
     this.orderForm.type = type;
-    
+
     // Si MARKET, mettre le prix au prix actuel
     if (type === 'MARKET' && this.selectedAsset) {
       this.orderForm.price = this.selectedAsset.price;
@@ -107,6 +116,12 @@ export class OrdersComponent implements OnInit {
   placeOrder(): void {
     this.errorMessage = '';
     this.successMessage = '';
+
+    // Désactiver si HALTED
+    if (this.marketState === 'HALTED') {
+      this.errorMessage = 'Marché en pause (HALTED)';
+      return;
+    }
 
     // Validation
     if (this.orderForm.quantity <= 0) {
@@ -126,38 +141,38 @@ export class OrdersComponent implements OnInit {
 
     // TODO: Remplacer par appel API vers le backend du Membre 1
     // Pour l'instant : SIMULATION avec logique correcte
-    
+
     const simulatedResponse = this.simulateBackendResponse();
-    
+
     setTimeout(() => {
       this.isLoading = false;
-      
+
       // ✅ Afficher le bon message selon le statut
       if (simulatedResponse.status === 'FILLED') {
         this.successMessage = `✅ Ordre ${this.orderForm.side} de ${this.orderForm.quantity} ${this.orderForm.symbol} EXÉCUTÉ à ${simulatedResponse.executedPrice.toFixed(2)}€`;
-        
+
         // Recharger le cash car l'argent a été déduit
         this.loadCash();
-        
+
         // Redirection après 2 secondes
         setTimeout(() => {
           this.router.navigate(['/trading']);
         }, 2000);
-        
+
       } else if (simulatedResponse.status === 'PENDING') {
         this.successMessage = `⏳ Ordre ${this.orderForm.side} de ${this.orderForm.quantity} ${this.orderForm.symbol} PLACÉ dans le carnet d'ordres à ${this.orderForm.price.toFixed(2)}€. En attente d'exécution...`;
-        
+
         // Redirection vers portfolio pour voir l'ordre en attente
         setTimeout(() => {
           this.router.navigate(['/portfolio']);
         }, 3000);
-        
+
       } else if (simulatedResponse.status === 'PARTIALLY_FILLED') {
         this.successMessage = `⚠️ Ordre PARTIELLEMENT exécuté: ${simulatedResponse.filledQuantity}/${this.orderForm.quantity} à ${simulatedResponse.executedPrice.toFixed(2)}€`;
-        
+
         // Recharger le cash
         this.loadCash();
-        
+
         setTimeout(() => {
           this.router.navigate(['/portfolio']);
         }, 3000);
@@ -165,12 +180,16 @@ export class OrdersComponent implements OnInit {
     }, 1000);
   }
 
+  ngOnDestroy(): void {
+    this.marketStateSub?.unsubscribe?.();
+  }
+
   /**
    * Simuler la réponse du backend (à remplacer par vrai appel API)
    */
   private simulateBackendResponse(): any {
     const currentPrice = this.selectedAsset?.price || this.orderForm.price;
-    
+
     // Logique MARKET : toujours exécuté immédiatement
     if (this.orderForm.type === 'MARKET') {
       return {
@@ -179,7 +198,7 @@ export class OrdersComponent implements OnInit {
         filledQuantity: this.orderForm.quantity
       };
     }
-    
+
     // Logique LIMIT
     if (this.orderForm.type === 'LIMIT') {
       if (this.orderForm.side === 'BUY') {
@@ -214,7 +233,7 @@ export class OrdersComponent implements OnInit {
         }
       }
     }
-    
+
     // Par défaut (STOP, etc.)
     return {
       status: 'PENDING',
