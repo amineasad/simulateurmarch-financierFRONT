@@ -1,19 +1,19 @@
 // ===============================================
-// ✅ TRADING ROOM COMPONENT (version complète avec catégories Finnhub)
+// ✅ TRADING ROOM COMPONENT - VERSION COMPLÈTE AVEC ORDERBOOK
 // ===============================================
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { Subscription, interval } from 'rxjs';
 import { Router } from '@angular/router';
 import { WebsocketService } from '../../services/websocket.service';
 import { TradingService, AssetCategory } from '../../services/trading.service';
 import { WalletService } from '../../services/wallet.service';
 import { AuthService } from '../../services/auth.service';
+import { LocalOrderBookService, LocalOrderBook } from '../../services/local-orderbook.service';
 import {
   Asset,
   Order,
   Position,
-  OrderBook,
   Notification,
   ChatMessage,
   MarketUpdate
@@ -41,10 +41,11 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
   totalPortfolioValue = 0;
   totalPnL = 0;
 
-  // ========= CARNET D’ORDRES =========
-  orderBook: OrderBook = { bids: [], asks: [] };
+  // ========= CARNET D'ORDRES =========
+  currentOrderBook: LocalOrderBook | null = null;
+  private orderBookRefreshSub?: Subscription;
 
-  // ========= FORMULAIRE D’ORDRE =========
+  // ========= FORMULAIRE D'ORDRE =========
   orderForm: Order = {
     userId: 'user-' + Math.random().toString(36).substr(2, 9),
     symbol: 'AAPL',
@@ -61,7 +62,6 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
   username = '';
 
   // ========= STATISTIQUES =========
-  
   latency = 12;
   ordersToday = 0;
   volumeToday = 0;
@@ -74,7 +74,8 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
     private tradingService: TradingService,
     private walletService: WalletService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private localOrderBookService: LocalOrderBookService
   ) {}
 
   // ===============================================================
@@ -86,12 +87,17 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
     this.loadInitialData();
     this.loadWalletBalance();
     this.connectToWebSocket();
-    this.loadMockOrderBook();
+    this.loadOrderBookForSelectedSymbol();
+    this.syncOrderBooksWithMarketPrices();
   }
 
   ngOnDestroy(): void {
     this.subscriptions.forEach(sub => sub.unsubscribe());
     this.wsService.disconnect();
+    
+    if (this.orderBookRefreshSub) {
+      this.orderBookRefreshSub.unsubscribe();
+    }
   }
 
   // ===============================================================
@@ -141,21 +147,21 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
   // 🔹 MARCHÉ / ASSETS
   // ===============================================================
   private loadInitialData(): void {
-    // ---- liste des actifs
+    // Liste des actifs
     const assetsSub = this.tradingService.getAssets().subscribe(assets => {
       this.assets = assets;
       this.updateSelectedAsset();
     });
     this.subscriptions.push(assetsSub);
 
-    // ---- portfolio
+    // Portfolio
     const portfolioSub = this.tradingService.getPortfolio().subscribe(pf => {
       this.portfolio = pf;
       this.calculatePortfolioStats();
     });
     this.subscriptions.push(portfolioSub);
 
-    // ---- symbole sélectionné
+    // Symbole sélectionné
     const selectedSub = this.tradingService.getSelectedAsset().subscribe(symbol => {
       this.selectedSymbol = symbol;
       this.updateSelectedAsset();
@@ -163,7 +169,7 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
     });
     this.subscriptions.push(selectedSub);
 
-    // ---- catégorie sélectionnée (nouveau)
+    // Catégorie sélectionnée
     const catSub = this.tradingService.getSelectedCategory().subscribe(cat => {
       this.selectedCategory = cat;
     });
@@ -175,6 +181,10 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
    */
   changeCategory(cat: AssetCategory): void {
     this.tradingService.setSelectedCategory(cat);
+    
+    setTimeout(() => {
+      this.loadOrderBookForSelectedSymbol();
+    }, 200);
   }
 
   /**
@@ -182,14 +192,94 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
    */
   selectAsset(symbol: string): void {
     this.tradingService.selectAsset(symbol);
+    this.loadOrderBookForSelectedSymbol();
   }
 
   /**
-   * Mettre à jour l’actif sélectionné (pour le graphique + header)
+   * Mettre à jour l'actif sélectionné
    */
   private updateSelectedAsset(): void {
     this.selectedAsset = this.assets.find(a => a.symbol === this.selectedSymbol) || null;
     if (this.selectedAsset) this.orderForm.price = this.selectedAsset.price;
+  }
+
+  // ===============================================================
+  // 🔹 ORDERBOOK
+  // ===============================================================
+  
+  /**
+   * ✅ Charger le carnet du symbole sélectionné
+   */
+  /**
+ * ✅ Charger le carnet du symbole sélectionné
+ */
+private loadOrderBookForSelectedSymbol(): void {
+  console.log(`📖 Chargement carnet pour ${this.selectedSymbol}`);
+  
+  this.localOrderBookService.getOrderBook(this.selectedSymbol).subscribe(book => {
+    this.currentOrderBook = book;
+    console.log(`✅ Carnet chargé pour ${this.selectedSymbol}:`, book);
+    
+    // ✅ NOUVEAU : Mettre à jour BID/ASK depuis le carnet
+    if (book && this.selectedAsset) {
+      if (book.bids.length > 0) {
+        this.selectedAsset.bid = book.bids[0].price;
+      }
+      if (book.asks.length > 0) {
+        this.selectedAsset.ask = book.asks[0].price;
+      }
+      this.selectedAsset.price = book.lastPrice;
+    }
+  });
+
+  if (this.orderBookRefreshSub) {
+    this.orderBookRefreshSub.unsubscribe();
+  }
+
+  this.orderBookRefreshSub = interval(3000).subscribe(() => {
+    this.localOrderBookService.getOrderBook(this.selectedSymbol).subscribe(book => {
+      this.currentOrderBook = book;
+      
+      // ✅ NOUVEAU : Mise à jour continue BID/ASK
+      if (book && this.selectedAsset) {
+        if (book.bids.length > 0) {
+          this.selectedAsset.bid = book.bids[0].price;
+        }
+        if (book.asks.length > 0) {
+          this.selectedAsset.ask = book.asks[0].price;
+        }
+        this.selectedAsset.price = book.lastPrice;
+      }
+    });
+  });
+}
+
+  /**
+   * ✅ Synchroniser les carnets avec les prix réels
+   */
+  private syncOrderBooksWithMarketPrices(): void {
+    this.tradingService.getAssets().subscribe(assets => {
+      assets.forEach(asset => {
+        if (asset.price > 0) {
+          this.localOrderBookService.updateMarketPrice(asset.symbol, asset.price);
+        }
+      });
+    });
+  }
+
+  /**
+   * ✅ Helper pour les barres de profondeur
+   */
+  getOrderBookMaxQuantity(side: 'bids' | 'asks'): number {
+    if (!this.currentOrderBook) return 1;
+    
+    const entries = side === 'bids' 
+      ? this.currentOrderBook.bids 
+      : this.currentOrderBook.asks;
+    
+    if (entries.length === 0) return 1;
+    
+    return Math.max(...entries.map(e => e.quantity), 1);
   }
 
   // ===============================================================
@@ -229,22 +319,93 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
   // 🔹 ORDRES
   // ===============================================================
   placeOrder(): void {
-    if (!this.isConnected) return this.addNotification('error', 'Non connecté au serveur');
-
-    if (this.orderForm.quantity <= 0) return this.addNotification('error', 'Quantité invalide');
-
-    if (this.orderForm.side === 'BUY') {
-      const total = this.orderForm.price * this.orderForm.quantity;
-      if (total > this.cash) return this.addNotification('error', 'Fonds insuffisants');
-    } else {
-      const pos = this.tradingService.getPosition(this.orderForm.symbol);
-      if (!pos || pos.quantity < this.orderForm.quantity)
-        return this.addNotification('error', 'Position insuffisante');
+    if (!this.isConnected) {
+      return this.addNotification('error', 'Non connecté au serveur');
     }
 
+    if (this.orderForm.quantity <= 0) {
+      return this.addNotification('error', 'Quantité invalide');
+    }
+
+    const symbol = this.orderForm.symbol;
+    const side = this.orderForm.side;
+    const quantity = this.orderForm.quantity;
+    const type = this.orderForm.type;
+
+    // Validation BUY
+    if (side === 'BUY') {
+      const total = this.orderForm.price * quantity;
+      if (total > this.cash) {
+        return this.addNotification('error', `Fonds insuffisants (disponible: ${this.cash.toFixed(2)}€)`);
+      }
+    }
+
+    // Validation SELL
+    if (side === 'SELL') {
+      const pos = this.tradingService.getPosition(symbol);
+      if (!pos || pos.quantity < quantity) {
+        return this.addNotification('error', 'Position insuffisante');
+      }
+    }
+
+    let executionPrice: number;
+
+    if (type === 'MARKET') {
+      // ✅ MARKET : Exécuter immédiatement
+      executionPrice = this.localOrderBookService.executeMarketOrder(symbol, side, quantity);
+      
+      if (executionPrice === 0) {
+        return this.addNotification('error', 'Pas de liquidité disponible');
+      }
+
+      if (side === 'BUY') {
+        this.tradingService.addPosition(symbol, quantity, executionPrice);
+        this.cash -= executionPrice * quantity;
+      } else {
+        this.tradingService.removePosition(symbol, quantity);
+        this.cash += executionPrice * quantity;
+      }
+
+      this.addNotification(
+        'success', 
+        `✅ MARKET ${side === 'BUY' ? 'Achat' : 'Vente'}: ${quantity} ${symbol} @ ${executionPrice.toFixed(2)}€`
+      );
+
+    } else {
+      // ✅ LIMIT : Ajouter au carnet
+      const limitPrice = this.orderForm.price;
+      
+      this.localOrderBookService.addLimitOrder(symbol, side, limitPrice, quantity);
+      
+      this.addNotification(
+        'info', 
+        `⏳ LIMIT ${side === 'BUY' ? 'Achat' : 'Vente'}: ${quantity} ${symbol} @ ${limitPrice.toFixed(2)}€`
+      );
+
+      // Simuler l'exécution après 3-5 secondes
+      const executionDelay = 3000 + Math.random() * 2000;
+      
+      setTimeout(() => {
+        if (side === 'BUY') {
+          this.tradingService.addPosition(symbol, quantity, limitPrice);
+          this.cash -= limitPrice * quantity;
+        } else {
+          this.tradingService.removePosition(symbol, quantity);
+          this.cash += limitPrice * quantity;
+        }
+        
+        this.addNotification('success', `✅ LIMIT exécuté: ${quantity} ${symbol} @ ${limitPrice.toFixed(2)}€`);
+        this.loadOrderBookForSelectedSymbol();
+      }, executionDelay);
+    }
+
+    // Recharger le carnet
+    this.loadOrderBookForSelectedSymbol();
+    this.calculatePortfolioStats();
+
+    // Envoyer via WebSocket (pour le mock)
     const order: Order = { ...this.orderForm, timestamp: new Date() };
     this.wsService.sendOrder(order);
-    this.addNotification('info', `Ordre envoyé: ${order.side} ${order.quantity} ${order.symbol}`);
   }
 
   // ===============================================================
@@ -288,28 +449,6 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
   }
 
   // ===============================================================
-  // 🔹 MOCK ORDER BOOK
-  // ===============================================================
-  private loadMockOrderBook(): void {
-    this.orderBook = {
-      bids: [
-        { price: 178.48, quantity: 1250 },
-        { price: 178.45, quantity: 890 },
-        { price: 178.42, quantity: 2100 },
-        { price: 178.40, quantity: 1500 },
-        { price: 178.38, quantity: 750 }
-      ],
-      asks: [
-        { price: 178.52, quantity: 980 },
-        { price: 178.55, quantity: 1420 },
-        { price: 178.58, quantity: 670 },
-        { price: 178.60, quantity: 1890 },
-        { price: 178.62, quantity: 1100 }
-      ]
-    };
-  }
-
-  // ===============================================================
   // 🔹 NAVIGATION
   // ===============================================================
   goToOrders(): void {
@@ -327,10 +466,12 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
   goToLobby(): void {
     this.router.navigate(['/lobby']);
   }
-   goToDetails(): void {
+
+  goToDetails(): void {
     this.router.navigate(['/prices']);
   }
- goToEducation(): void {
+
+  goToEducation(): void {
     this.router.navigate(['/education']);
   }
 }

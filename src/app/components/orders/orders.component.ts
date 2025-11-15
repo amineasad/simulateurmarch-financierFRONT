@@ -1,15 +1,18 @@
-// src/app/components/orders/orders.component.ts
+// ====================================================================
+// src/app/components/orders/orders.component.ts - VERSION UNIFIÉE
+// ====================================================================
 
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { TradingService } from '../../services/trading.service';
 import { AuthService } from '../../services/auth.service';
 import { WalletService } from '../../services/wallet.service';
+import { LocalOrderBookService } from '../../services/local-orderbook.service';
 
 interface Order {
   userId: string;
   symbol: string;
-  type: 'MARKET' | 'LIMIT' | 'STOP';
+  type: 'MARKET' | 'LIMIT';  // ✅ Supprimé STOP
   side: 'BUY' | 'SELL';
   price: number;
   quantity: number;
@@ -41,11 +44,11 @@ export class OrdersComponent implements OnInit {
     private router: Router,
     private tradingService: TradingService,
     private authService: AuthService,
-    private walletService: WalletService
+    private walletService: WalletService,
+    private localOrderBookService: LocalOrderBookService  // ✅ AJOUTÉ
   ) {}
 
   ngOnInit(): void {
-    // Récupérer l'utilisateur
     const user = this.authService.getCurrentUser();
     if (!user || !user.id) {
       this.router.navigate(['/login']);
@@ -53,13 +56,11 @@ export class OrdersComponent implements OnInit {
     }
     this.orderForm.userId = user.id.toString();
 
-    // Charger le symbole sélectionné
     this.tradingService.getSelectedAsset().subscribe(symbol => {
       this.orderForm.symbol = symbol;
       this.loadAssetInfo();
     });
 
-    // Charger le cash disponible
     this.loadCash();
   }
 
@@ -87,10 +88,9 @@ export class OrdersComponent implements OnInit {
     });
   }
 
-  changeOrderType(type: 'MARKET' | 'LIMIT' | 'STOP'): void {
+  changeOrderType(type: 'MARKET' | 'LIMIT'): void {  // ✅ Enlevé STOP
     this.orderForm.type = type;
     
-    // Si MARKET, mettre le prix au prix actuel
     if (type === 'MARKET' && this.selectedAsset) {
       this.orderForm.price = this.selectedAsset.price;
     }
@@ -104,17 +104,26 @@ export class OrdersComponent implements OnInit {
     return this.orderForm.price * this.orderForm.quantity;
   }
 
+  /**
+   * ✅ NOUVELLE VERSION : Utilise LocalOrderBookService (comme gaming room)
+   */
   placeOrder(): void {
     this.errorMessage = '';
     this.successMessage = '';
 
-    // Validation
+    // Validations
     if (this.orderForm.quantity <= 0) {
       this.errorMessage = 'La quantité doit être supérieure à 0';
       return;
     }
 
-    if (this.orderForm.side === 'BUY') {
+    const symbol = this.orderForm.symbol;
+    const side = this.orderForm.side;
+    const quantity = this.orderForm.quantity;
+    const type = this.orderForm.type;
+
+    // Validation BUY
+    if (side === 'BUY') {
       const total = this.getOrderTotal();
       if (total > this.cashAvailable) {
         this.errorMessage = `Fonds insuffisants. Disponible: ${this.cashAvailable.toFixed(2)}€`;
@@ -122,107 +131,135 @@ export class OrdersComponent implements OnInit {
       }
     }
 
+    // Validation SELL
+    if (side === 'SELL') {
+      const position = this.tradingService.getPosition(symbol);
+      if (!position || position.quantity < quantity) {
+        this.errorMessage = 'Position insuffisante pour vendre';
+        return;
+      }
+    }
+
     this.isLoading = true;
 
-    // TODO: Remplacer par appel API vers le backend du Membre 1
-    // Pour l'instant : SIMULATION avec logique correcte
-    
-    const simulatedResponse = this.simulateBackendResponse();
-    
+    // ✅ LOGIQUE IDENTIQUE À GAMING ROOM
     setTimeout(() => {
-      this.isLoading = false;
-      
-      // ✅ Afficher le bon message selon le statut
-      if (simulatedResponse.status === 'FILLED') {
-        this.successMessage = `✅ Ordre ${this.orderForm.side} de ${this.orderForm.quantity} ${this.orderForm.symbol} EXÉCUTÉ à ${simulatedResponse.executedPrice.toFixed(2)}€`;
+      let executionPrice: number;
+
+      if (type === 'MARKET') {
+        // ✅ MARKET : Exécuter immédiatement contre le carnet
+        executionPrice = this.localOrderBookService.executeMarketOrder(symbol, side, quantity);
         
-        // Recharger le cash car l'argent a été déduit
-        this.loadCash();
+        if (executionPrice === 0) {
+          this.errorMessage = 'Pas de liquidité disponible dans le carnet';
+          this.isLoading = false;
+          return;
+        }
+
+        // Mettre à jour le portfolio
+        if (side === 'BUY') {
+          this.tradingService.addPosition(symbol, quantity, executionPrice);
+          this.cashAvailable -= executionPrice * quantity;
+        } else {
+          this.tradingService.removePosition(symbol, quantity);
+          this.cashAvailable += executionPrice * quantity;
+        }
+
+        this.successMessage = `✅ Ordre MARKET ${side === 'BUY' ? 'Achat' : 'Vente'}: ${quantity} ${symbol} exécuté à ${executionPrice.toFixed(2)}€`;
+        
+        this.isLoading = false;
         
         // Redirection après 2 secondes
         setTimeout(() => {
           this.router.navigate(['/trading']);
         }, 2000);
-        
-      } else if (simulatedResponse.status === 'PENDING') {
-        this.successMessage = `⏳ Ordre ${this.orderForm.side} de ${this.orderForm.quantity} ${this.orderForm.symbol} PLACÉ dans le carnet d'ordres à ${this.orderForm.price.toFixed(2)}€. En attente d'exécution...`;
-        
-        // Redirection vers portfolio pour voir l'ordre en attente
-        setTimeout(() => {
-          this.router.navigate(['/portfolio']);
-        }, 3000);
-        
-      } else if (simulatedResponse.status === 'PARTIALLY_FILLED') {
-        this.successMessage = `⚠️ Ordre PARTIELLEMENT exécuté: ${simulatedResponse.filledQuantity}/${this.orderForm.quantity} à ${simulatedResponse.executedPrice.toFixed(2)}€`;
-        
-        // Recharger le cash
-        this.loadCash();
-        
-        setTimeout(() => {
-          this.router.navigate(['/portfolio']);
-        }, 3000);
-      }
-    }, 1000);
-  }
 
-  /**
-   * Simuler la réponse du backend (à remplacer par vrai appel API)
-   */
-  private simulateBackendResponse(): any {
-    const currentPrice = this.selectedAsset?.price || this.orderForm.price;
-    
-    // Logique MARKET : toujours exécuté immédiatement
-    if (this.orderForm.type === 'MARKET') {
-      return {
-        status: 'FILLED',
-        executedPrice: currentPrice,
-        filledQuantity: this.orderForm.quantity
-      };
-    }
-    
-    // Logique LIMIT
-    if (this.orderForm.type === 'LIMIT') {
-      if (this.orderForm.side === 'BUY') {
-        // ACHAT : Si prix limite >= prix actuel → Exécution immédiate
-        if (this.orderForm.price >= currentPrice) {
-          return {
-            status: 'FILLED',
-            executedPrice: currentPrice, // Exécuté au meilleur prix (pas au prix limite)
-            filledQuantity: this.orderForm.quantity
-          };
-        } else {
-          // Prix limite < prix actuel → En attente dans le carnet
-          return {
-            status: 'PENDING',
-            orderId: Math.floor(Math.random() * 10000)
-          };
-        }
       } else {
-        // VENTE : Si prix limite <= prix actuel → Exécution immédiate
-        if (this.orderForm.price <= currentPrice) {
-          return {
-            status: 'FILLED',
-            executedPrice: currentPrice,
-            filledQuantity: this.orderForm.quantity
-          };
-        } else {
-          // Prix limite > prix actuel → En attente dans le carnet
-          return {
-            status: 'PENDING',
-            orderId: Math.floor(Math.random() * 10000)
-          };
-        }
+        // ✅ LIMIT : Ajouter au carnet
+        const limitPrice = this.orderForm.price;
+        
+        this.localOrderBookService.addLimitOrder(symbol, side, limitPrice, quantity);
+        
+        this.successMessage = `⏳ Ordre LIMIT ${side === 'BUY' ? 'Achat' : 'Vente'}: ${quantity} ${symbol} placé à ${limitPrice.toFixed(2)}€ (en attente)`;
+        
+        this.isLoading = false;
+
+        // ✅ Simuler l'exécution après 3-5 secondes
+        const executionDelay = 3000 + Math.random() * 2000;
+        
+        setTimeout(() => {
+          if (side === 'BUY') {
+            this.tradingService.addPosition(symbol, quantity, limitPrice);
+            this.cashAvailable -= limitPrice * quantity;
+          } else {
+            this.tradingService.removePosition(symbol, quantity);
+            this.cashAvailable += limitPrice * quantity;
+          }
+          
+          this.successMessage = `✅ Ordre LIMIT exécuté: ${quantity} ${symbol} @ ${limitPrice.toFixed(2)}€`;
+          
+          // Redirection
+          setTimeout(() => {
+            this.router.navigate(['/portfolio']);
+          }, 2000);
+        }, executionDelay);
       }
-    }
-    
-    // Par défaut (STOP, etc.)
-    return {
-      status: 'PENDING',
-      orderId: Math.floor(Math.random() * 10000)
-    };
+    }, 500);
   }
 
   goBack(): void {
     this.router.navigate(['/trading']);
   }
 }
+
+// ====================================================================
+// MODIFICATIONS DANS orders.component.html
+// ====================================================================
+
+/*
+Dans le HTML, SUPPRIMEZ le bouton STOP :
+
+AVANT (à supprimer) :
+<button 
+  class="btn-type"
+  [class.active]="orderForm.type === 'STOP'"
+  (click)="changeOrderType('STOP')">
+  Stop
+</button>
+
+APRÈS :
+Gardez seulement :
+- Marché
+- Limite
+*/
+
+// ====================================================================
+// RÉSUMÉ
+// ====================================================================
+
+/*
+✅ CE QUI A CHANGÉ :
+
+1. Import de LocalOrderBookService
+2. Injection du service dans constructor
+3. Type 'STOP' supprimé (seulement MARKET et LIMIT)
+4. placeOrder() utilise maintenant :
+   - executeMarketOrder() pour MARKET
+   - addLimitOrder() pour LIMIT
+5. Même logique exacte que gaming-room
+6. Portfolio mis à jour localement (addPosition / removePosition)
+
+✅ RÉSULTAT :
+
+- Ordre MARKET → Consomme le carnet immédiatement
+- Ordre LIMIT → S'ajoute au carnet, exécution après 3-5s
+- Cash mis à jour automatiquement
+- Redirection vers trading ou portfolio
+
+✅ COHÉRENCE TOTALE :
+
+- Page trading principale : LocalOrderBook
+- Gaming room : SessionOrderBook (backend)
+- Page orders : LocalOrderBook (même que trading)
+- Logique identique partout !
+*/
