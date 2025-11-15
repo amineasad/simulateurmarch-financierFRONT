@@ -1,5 +1,5 @@
 // ====================================================================
-// ÉTAPE 1 : Créer src/app/services/local-orderbook.service.ts
+// src/app/services/local-orderbook.service.ts - VERSION RÉALISTE
 // ====================================================================
 
 import { Injectable } from '@angular/core';
@@ -135,6 +135,33 @@ export class LocalOrderBookService {
       
       observer.complete();
     });
+  }
+
+  /**
+   * ✅ NOUVEAU : Vérifie si un ordre LIMIT peut être exécuté immédiatement
+   * Retourne le prix d'exécution ou null si l'ordre doit être ajouté au carnet
+   */
+  canExecuteLimitOrder(symbol: string, side: 'BUY' | 'SELL', limitPrice: number): number | null {
+    const book = this.orderBooks$.value[symbol];
+    
+    if (!book) return null;
+
+    if (side === 'BUY') {
+      // Pour un BUY : vérifier si le prix limite >= meilleur ASK
+      if (book.asks.length > 0 && limitPrice >= book.asks[0].price) {
+        // Ordre exécutable immédiatement au prix du marché
+        return book.asks[0].price;
+      }
+    } else {
+      // Pour un SELL : vérifier si le prix limite <= meilleur BID
+      if (book.bids.length > 0 && limitPrice <= book.bids[0].price) {
+        // Ordre exécutable immédiatement au prix du marché
+        return book.bids[0].price;
+      }
+    }
+
+    // L'ordre doit être ajouté au carnet (pas exécutable immédiatement)
+    return null;
   }
 
   /**
@@ -307,4 +334,3 @@ export class LocalOrderBookService {
     };
   }
 }
-

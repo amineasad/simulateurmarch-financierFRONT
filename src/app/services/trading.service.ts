@@ -1,10 +1,7 @@
 // ===============================================
 // ✅ TradingService FINAL
-//    - Finnhub (Stocks/ETFs)
-//    - TwelveData (Forex/Metals)
-//    - Encodage symboles + lecture correcte des champs
-//    - Anti-429 + batch refresh
-//    - % simulé si absent (plus de "0%")
+//    - Prix temps réel (Finnhub / TwelveData)
+//    - Gestion centralisée du portefeuille & du cash
 // ===============================================
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -17,19 +14,20 @@ export type AssetCategory = 'STOCKS' | 'FOREX' | 'METALS' | 'ETFS';
 @Injectable({ providedIn: 'root' })
 export class TradingService {
   // ====== APIs externes ======
-  private readonly FINNHUB_KEY = 'd45arkpr01qsugt9h0o0d45arkpr01qsugt9h0og';
+  private readonly FINNHUB_KEY  = 'd45arkpr01qsugt9h0o0d45arkpr01qsugt9h0og';
   private readonly FINNHUB_BASE = 'https://finnhub.io/api/v1';
-  private readonly TWELVE_KEY  = '0c8a86648f88428586bc01fcba3d32cb';
-  private readonly TWELVE_BASE = 'https://api.twelvedata.com';
+  private readonly TWELVE_KEY   = '0c8a86648f88428586bc01fcba3d32cb';
+  private readonly TWELVE_BASE  = 'https://api.twelvedata.com';
 
   // backend (si tu en as un pour orderbook)
   private readonly API_URL = 'http://localhost:8080/api';
 
   // ====== États observables ======
-  private assets$         = new BehaviorSubject<Asset[]>([]);
-  private portfolio$      = new BehaviorSubject<Position[]>([]);
-  private cash$           = new BehaviorSubject<number>(100000);
-  private selectedAsset$  = new BehaviorSubject<string>('AAPL');
+  private assets$           = new BehaviorSubject<Asset[]>([]);
+  private portfolio$        = new BehaviorSubject<Position[]>([]);
+  private cash$             = new BehaviorSubject<number>(0);   // ✅ valeur par défaut
+  private cashInitialized   = false;                            // ✅ pour ne pas réinitialiser après un trade
+  private selectedAsset$    = new BehaviorSubject<string>('AAPL');
   private selectedCategory$ = new BehaviorSubject<AssetCategory>('STOCKS');
 
   // ====== Symboles ======
@@ -77,19 +75,20 @@ export class TradingService {
     return m[base] || base;
   }
 
-  /** Petite “simulation” stable du % si l’API n’en donne pas :
-   * produit une variation douce [-0.6%, +0.6%] pseudo-déterministe par symbole. */
+  /** Simulation stable du % si l’API n’en donne pas */
   private simulatePct(symbol: string, priceNow: number): number {
     let h = 0;
     for (let i = 0; i < symbol.length; i++) h = (h * 31 + symbol.charCodeAt(i)) >>> 0;
     const rnd = ((h % 201) - 100) / 100; // [-1.00 .. +1.00]
-    return +(rnd * 0.6).toFixed(2);      // +/- 0.60% max, arrondi 2 décimales
+    return +(rnd * 0.6).toFixed(2);      // +/- 0.60%
   }
 
   // ===========================================================
   // 🔹 Gestion Catégorie
   // ===========================================================
-  getSelectedCategory(): Observable<AssetCategory> { return this.selectedCategory$.asObservable(); }
+  getSelectedCategory(): Observable<AssetCategory> {
+    return this.selectedCategory$.asObservable();
+  }
 
   setSelectedCategory(cat: AssetCategory): void {
     if (cat === this.selectedCategory$.value) return;
@@ -153,8 +152,6 @@ export class TradingService {
 
   // ===========================================================
   // 🔹 Fetch prix réel (Finnhub + TwelveData)
-  //    - Stocks/ETFs : Finnhub /quote (c, pc, dp)
-  //    - Forex/Metals : TwelveData /quote (close, percent_change) -> fallback /price
   // ===========================================================
   private async fetchRealPrice(symbol: string, cat: AssetCategory): Promise<void> {
     try {
@@ -177,8 +174,9 @@ export class TradingService {
       } else {
         // FOREX / METALS — TwelveData
         const encoded = encodeURIComponent(symbol); // "EUR/USD" -> "EUR%2FUSD"
-        // 1) quote: close + percent_change
-        const q = await this.fetchWithRetry(`${this.TWELVE_BASE}/quote?symbol=${encoded}&apikey=${this.TWELVE_KEY}`);
+        const q = await this.fetchWithRetry(
+          `${this.TWELVE_BASE}/quote?symbol=${encoded}&apikey=${this.TWELVE_KEY}`
+        );
         if (q && (q.close || q.price)) {
           price = Number(q.close ?? q.price);
           if (q.percent_change !== undefined && q.percent_change !== null && isFinite(Number(q.percent_change))) {
@@ -187,8 +185,9 @@ export class TradingService {
             pct = this.simulatePct(symbol, price);
           }
         } else {
-          // 2) fallback /price
-          const p = await this.fetchWithRetry(`${this.TWELVE_BASE}/price?symbol=${encoded}&apikey=${this.TWELVE_KEY}`);
+          const p = await this.fetchWithRetry(
+            `${this.TWELVE_BASE}/price?symbol=${encoded}&apikey=${this.TWELVE_KEY}`
+          );
           if (p && Number(p.price) > 0) {
             price = Number(p.price);
             pct = this.simulatePct(symbol, price);
@@ -210,12 +209,12 @@ export class TradingService {
   // 🔹 Rafraîchissement progressif (anti-quota)
   // ===========================================================
   startRealtimeSync(): void {
-    const REFRESH_INTERVAL = 15000;  // 15s
+    const REFRESH_INTERVAL = 15000;   // 15s
     const DELAY_BETWEEN_CALLS = 1200; // 1.2s entre deux symboles
 
     timer(0, REFRESH_INTERVAL).pipe(
       concatMap(() => {
-        const cat = this.selectedCategory$.value;
+        const cat  = this.selectedCategory$.value;
         const list = this.assets$.value;
         return from(list).pipe(
           concatMap((a, i) =>
@@ -235,7 +234,14 @@ export class TradingService {
   // ===========================================================
   // 🔹 Update local (prix & % & bid/ask)
   // ===========================================================
-  updateAssetPrice(symbol: string, newPrice: number, changePct: number, bid?: number, ask?: number, volume?: string): void {
+  updateAssetPrice(
+    symbol: string,
+    newPrice: number,
+    changePct: number,
+    bid?: number,
+    ask?: number,
+    volume?: string
+  ): void {
     const updated = this.assets$.value.map(a =>
       a.symbol === symbol
         ? {
@@ -261,15 +267,17 @@ export class TradingService {
   // 🔹 Portfolio utils
   // ===========================================================
   addPosition(symbol: string, quantity: number, price: number): void {
-    const curr = this.portfolio$.value;
+    const curr     = this.portfolio$.value;
     const existing = curr.find(p => p.symbol === symbol);
 
     if (existing) {
       const newQty = existing.quantity + quantity;
       const newAvg = ((existing.avgPrice * existing.quantity) + (price * quantity)) / newQty;
-      const next = curr.map(p => p.symbol === symbol
-        ? { ...p, quantity: newQty, avgPrice: newAvg, currentPrice: price }
-        : p);
+      const next   = curr.map(p =>
+        p.symbol === symbol
+          ? { ...p, quantity: newQty, avgPrice: newAvg, currentPrice: price }
+          : p
+      );
       this.portfolio$.next(next);
     } else {
       const newPos: Position = { symbol, quantity, avgPrice: price, currentPrice: price };
@@ -285,11 +293,35 @@ export class TradingService {
   }
 
   // ===========================================================
+  // 🔹 Gestion du CASH (centralisée)
+  // ===========================================================
+  setCash(amount: number): void {
+    this.cashInitialized = true;
+    this.cash$.next(amount);
+  }
+
+  debitCash(amount: number): void {
+    this.cashInitialized = true;
+    const current = this.cash$.value;
+    this.cash$.next(current - amount);
+  }
+
+  creditCash(amount: number): void {
+    this.cashInitialized = true;
+    const current = this.cash$.value;
+    this.cash$.next(current + amount);
+  }
+
+  isCashInitialized(): boolean {
+    return this.cashInitialized;
+  }
+
+  // ===========================================================
   // 🔹 Observables publics
   // ===========================================================
-  getAssets(): Observable<Asset[]> { return this.assets$.asObservable(); }
+  getAssets(): Observable<Asset[]>       { return this.assets$.asObservable(); }
   getPortfolio(): Observable<Position[]> { return this.portfolio$.asObservable(); }
-  getCash(): Observable<number> { return this.cash$.asObservable(); }
+  getCash(): Observable<number>          { return this.cash$.asObservable(); }
   getSelectedAsset(): Observable<string> { return this.selectedAsset$.asObservable(); }
 
   selectAsset(symbol: string): void {
@@ -302,7 +334,10 @@ export class TradingService {
   }
 
   getTotalPnL(): number {
-    return this.portfolio$.value.reduce((s, p) => s + p.quantity * (p.currentPrice - p.avgPrice), 0);
+    return this.portfolio$.value.reduce(
+      (s, p) => s + p.quantity * (p.currentPrice - p.avgPrice),
+      0
+    );
   }
 
   getOrderBook(symbol: string): Observable<OrderBook> {

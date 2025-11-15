@@ -49,10 +49,17 @@ export class PortfolioComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadPortfolio();
-    this.loadWallet();
-    this.loadPendingOrders(); // ← NOUVEAU
-  }
+  this.loadPortfolio();
+  // ❌ on ne recharge plus le cash direct depuis le backend :
+  // this.loadWallet();
+  this.loadPendingOrders();
+
+  // ✅ on lit le cash global du TradingService
+  this.tradingService.getCash().subscribe(c => {
+    this.cashAvailable = c;
+  });
+}
+
 
   loadPortfolio(): void {
     this.tradingService.getPortfolio().subscribe({

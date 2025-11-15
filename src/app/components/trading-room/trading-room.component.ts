@@ -89,6 +89,10 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
     this.connectToWebSocket();
     this.loadOrderBookForSelectedSymbol();
     this.syncOrderBooksWithMarketPrices();
+
+    // ✅ Cash global : s'abonner au BehaviorSubject du TradingService
+    const cashSub = this.tradingService.getCash().subscribe(c => (this.cash = c));
+    this.subscriptions.push(cashSub);
   }
 
   ngOnDestroy(): void {
@@ -126,22 +130,29 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
   // ===============================================================
   // 🔹 WALLET
   // ===============================================================
-  private loadWalletBalance(): void {
-    const user = this.authService.getCurrentUser();
-    if (!user || !user.id) return;
+ private loadWalletBalance(): void {
+  const user = this.authService.getCurrentUser();
+  if (!user || !user.id) return;
 
-    this.walletService.getWallet(user.id).subscribe({
-      next: wallet => {
-        this.cash = wallet.balance;
-        console.log('💰 Cash chargé:', this.cash);
-      },
-      error: err => {
-        console.error('Erreur chargement wallet:', err);
-        this.cash = 0;
-        this.addNotification('error', 'Impossible de charger le solde');
-      }
-    });
+  // ✅ Si le cash est déjà initialisé (par un trade ou une autre page),
+  // on NE RÉÉCRASE PAS avec la valeur brute du backend
+  if (this.tradingService.isCashInitialized()) {
+    return;
   }
+
+  this.walletService.getWallet(user.id).subscribe({
+    next: wallet => {
+      this.tradingService.setCash(wallet.balance); // ✅ on pousse dans le service
+      console.log('💰 Cash chargé:', wallet.balance);
+    },
+    error: err => {
+      console.error('Erreur chargement wallet:', err);
+      this.tradingService.setCash(0);
+      this.addNotification('error', 'Impossible de charger le solde');
+    }
+  });
+}
+
 
   // ===============================================================
   // 🔹 MARCHÉ / ASSETS
@@ -210,37 +221,14 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
   /**
    * ✅ Charger le carnet du symbole sélectionné
    */
-  /**
- * ✅ Charger le carnet du symbole sélectionné
- */
-private loadOrderBookForSelectedSymbol(): void {
-  console.log(`📖 Chargement carnet pour ${this.selectedSymbol}`);
-  
-  this.localOrderBookService.getOrderBook(this.selectedSymbol).subscribe(book => {
-    this.currentOrderBook = book;
-    console.log(`✅ Carnet chargé pour ${this.selectedSymbol}:`, book);
+  private loadOrderBookForSelectedSymbol(): void {
+    console.log(`📖 Chargement carnet pour ${this.selectedSymbol}`);
     
-    // ✅ NOUVEAU : Mettre à jour BID/ASK depuis le carnet
-    if (book && this.selectedAsset) {
-      if (book.bids.length > 0) {
-        this.selectedAsset.bid = book.bids[0].price;
-      }
-      if (book.asks.length > 0) {
-        this.selectedAsset.ask = book.asks[0].price;
-      }
-      this.selectedAsset.price = book.lastPrice;
-    }
-  });
-
-  if (this.orderBookRefreshSub) {
-    this.orderBookRefreshSub.unsubscribe();
-  }
-
-  this.orderBookRefreshSub = interval(3000).subscribe(() => {
     this.localOrderBookService.getOrderBook(this.selectedSymbol).subscribe(book => {
       this.currentOrderBook = book;
+      console.log(`✅ Carnet chargé pour ${this.selectedSymbol}:`, book);
       
-      // ✅ NOUVEAU : Mise à jour continue BID/ASK
+      // ✅ Mettre à jour BID/ASK depuis le carnet
       if (book && this.selectedAsset) {
         if (book.bids.length > 0) {
           this.selectedAsset.bid = book.bids[0].price;
@@ -251,8 +239,28 @@ private loadOrderBookForSelectedSymbol(): void {
         this.selectedAsset.price = book.lastPrice;
       }
     });
-  });
-}
+
+    if (this.orderBookRefreshSub) {
+      this.orderBookRefreshSub.unsubscribe();
+    }
+
+    this.orderBookRefreshSub = interval(3000).subscribe(() => {
+      this.localOrderBookService.getOrderBook(this.selectedSymbol).subscribe(book => {
+        this.currentOrderBook = book;
+        
+        // ✅ Mise à jour continue BID/ASK
+        if (book && this.selectedAsset) {
+          if (book.bids.length > 0) {
+            this.selectedAsset.bid = book.bids[0].price;
+          }
+          if (book.asks.length > 0) {
+            this.selectedAsset.ask = book.asks[0].price;
+          }
+          this.selectedAsset.price = book.lastPrice;
+        }
+      });
+    });
+  }
 
   /**
    * ✅ Synchroniser les carnets avec les prix réels
@@ -358,12 +366,14 @@ private loadOrderBookForSelectedSymbol(): void {
         return this.addNotification('error', 'Pas de liquidité disponible');
       }
 
+      const total = executionPrice * quantity;
+
       if (side === 'BUY') {
         this.tradingService.addPosition(symbol, quantity, executionPrice);
-        this.cash -= executionPrice * quantity;
+        this.tradingService.debitCash(total);   // ✅ cash global
       } else {
         this.tradingService.removePosition(symbol, quantity);
-        this.cash += executionPrice * quantity;
+        this.tradingService.creditCash(total);  // ✅ cash global
       }
 
       this.addNotification(
@@ -372,31 +382,69 @@ private loadOrderBookForSelectedSymbol(): void {
       );
 
     } else {
-      // ✅ LIMIT : Ajouter au carnet
+      // ✅ LIMIT : Vérifier si exécution immédiate possible
       const limitPrice = this.orderForm.price;
       
-      this.localOrderBookService.addLimitOrder(symbol, side, limitPrice, quantity);
-      
-      this.addNotification(
-        'info', 
-        `⏳ LIMIT ${side === 'BUY' ? 'Achat' : 'Vente'}: ${quantity} ${symbol} @ ${limitPrice.toFixed(2)}€`
+      const immediateExecutionPrice = this.localOrderBookService.canExecuteLimitOrder(
+        symbol, 
+        side, 
+        limitPrice
       );
 
-      // Simuler l'exécution après 3-5 secondes
-      const executionDelay = 3000 + Math.random() * 2000;
-      
-      setTimeout(() => {
+      if (immediateExecutionPrice !== null) {
+        // ⚡ Exécution immédiate (prix atteignable)
+        executionPrice = this.localOrderBookService.executeMarketOrder(symbol, side, quantity);
+        
+        if (executionPrice === 0) {
+          return this.addNotification('error', 'Pas de liquidité disponible');
+        }
+
+        const total = executionPrice * quantity;
+
         if (side === 'BUY') {
-          this.tradingService.addPosition(symbol, quantity, limitPrice);
-          this.cash -= limitPrice * quantity;
+          this.tradingService.addPosition(symbol, quantity, executionPrice);
+          this.tradingService.debitCash(total);   // ✅
         } else {
           this.tradingService.removePosition(symbol, quantity);
-          this.cash += limitPrice * quantity;
+          this.tradingService.creditCash(total);  // ✅
         }
+
+        this.addNotification(
+          'success', 
+          `✅ LIMIT exécuté immédiatement: ${quantity} ${symbol} @ ${executionPrice.toFixed(2)}€ (limite: ${limitPrice.toFixed(2)}€)`
+        );
+      } else {
+        // ⏳ Ajout au carnet
+        this.localOrderBookService.addLimitOrder(symbol, side, limitPrice, quantity);
         
-        this.addNotification('success', `✅ LIMIT exécuté: ${quantity} ${symbol} @ ${limitPrice.toFixed(2)}€`);
-        this.loadOrderBookForSelectedSymbol();
-      }, executionDelay);
+        this.addNotification(
+          'info', 
+          `⏳ LIMIT ajouté au carnet: ${quantity} ${symbol} @ ${limitPrice.toFixed(2)}€`
+        );
+
+        // 🎲 Simulation aléatoire d'exécution (50% de chance)
+        if (Math.random() > 0.5) {
+          const executionDelay = 5000 + Math.random() * 5000;
+          
+          setTimeout(() => {
+            const total = limitPrice * quantity;
+
+            if (side === 'BUY') {
+              this.tradingService.addPosition(symbol, quantity, limitPrice);
+              this.tradingService.debitCash(total);   // ✅
+            } else {
+              this.tradingService.removePosition(symbol, quantity);
+              this.tradingService.creditCash(total);  // ✅
+            }
+            
+            this.addNotification('success', `✅ LIMIT exécuté: ${quantity} ${symbol} @ ${limitPrice.toFixed(2)}€`);
+            this.loadOrderBookForSelectedSymbol();
+            this.calculatePortfolioStats();
+          }, executionDelay);
+        } else {
+          this.addNotification('info', '💡 Ordre en attente dans le carnet');
+        }
+      }
     }
 
     // Recharger le carnet
