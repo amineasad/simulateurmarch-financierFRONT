@@ -16,7 +16,7 @@ import { GamingRoomComponent } from './components/gamingroom/gaming-room.compone
 // Services
 import { WebsocketService } from './services/websocket.service';
 import { TradingService } from './services/trading.service';
-import { GameService } from './services/game.service';
+
 import { LoginComponent } from './components/auth/login/login.component';
 import { WalletManagementComponent } from './components/wallet/wallet-management/wallet-management.component';
 import { SuccessComponent } from './components/wallet/success/success.component';
@@ -79,7 +79,7 @@ GamingRoomComponent,
   providers: [
     WebsocketService,
     TradingService,
-    GameService
+    
   ],
   bootstrap: [AppComponent]
 })

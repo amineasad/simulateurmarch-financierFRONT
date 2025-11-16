@@ -11,6 +11,14 @@
       <button class="btn-back" (click)="goToDetails()">
         ℹ️ infos
       </button>
+      <div class="info-item">
+        <button class="btn-back" (click)="goToEducation()">
+          🎓 s'apprentir
+        </button>
+      </div>
+    </div>
+    
+    <div class="top-bar-right">
       <div class="time-info">
         <span class="icon">🕐</span>
         <span class="time">{{ currentTime | date:'HH:mm:ss' }}</span>
@@ -18,14 +26,6 @@
         <span class="market-status" [class.open]="isConnected">
           {{ isConnected ? 'MARCHÉ OUVERT' : 'MARCHÉ FERMÉ' }}
         </span>
-      </div>
-    </div>
-    
-    <div class="top-bar-right">
-      <div class="info-item">
-        <button class="btn-back" (click)="goToEducation()">
-          🎓 s'apprentir
-        </button>
       </div>
       <div class="info-item latency">
         <span class="icon">📡</span>
