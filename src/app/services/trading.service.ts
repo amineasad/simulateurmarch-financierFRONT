@@ -1,7 +1,8 @@
 // ===============================================
-// ✅ TradingService FINAL
+// ✅ TradingService AVEC LOCALSTORAGE COMPLET
 //    - Prix temps réel (Finnhub / TwelveData)
 //    - Gestion centralisée du portefeuille & du cash
+//    - 💾 Persistance localStorage (portfolio + cash)
 // ===============================================
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -18,15 +19,17 @@ export class TradingService {
   private readonly FINNHUB_BASE = 'https://finnhub.io/api/v1';
   private readonly TWELVE_KEY   = '0c8a86648f88428586bc01fcba3d32cb';
   private readonly TWELVE_BASE  = 'https://api.twelvedata.com';
-
-  // backend (si tu en as un pour orderbook)
   private readonly API_URL = 'http://localhost:8080/api';
+
+  // ====== Clés localStorage ======
+  private readonly PORTFOLIO_KEY = 'tradix_portfolio';
+  private readonly CASH_KEY = 'tradix_cash';
 
   // ====== États observables ======
   private assets$           = new BehaviorSubject<Asset[]>([]);
   private portfolio$        = new BehaviorSubject<Position[]>([]);
-  private cash$             = new BehaviorSubject<number>(0);   // ✅ valeur par défaut
-  private cashInitialized   = false;                            // ✅ pour ne pas réinitialiser après un trade
+  private cash$             = new BehaviorSubject<number>(0);
+  private cashInitialized   = false;
   private selectedAsset$    = new BehaviorSubject<string>('AAPL');
   private selectedCategory$ = new BehaviorSubject<AssetCategory>('STOCKS');
 
@@ -38,13 +41,11 @@ export class TradingService {
     'XOM','CVX','KO','PEP','WMT','TGT','HD','LOW','NKE','SBUX'
   ];
 
-  // Format TwelveData: "EUR/USD"
   private forexPairs: [string, string][] = [
     ['EUR','USD'], ['USD','JPY'], ['GBP','USD'], ['USD','CHF'],
     ['AUD','USD'], ['USD','CAD'], ['NZD','USD'], ['EUR','GBP']
   ];
 
-  // Métaux au format TwelveData: "XAU/USD", "XAG/USD", etc.
   private metalPairs: [string, string][] = [
     ['XAU','USD'], ['XAG','USD'], ['XPT','USD'], ['XPD','USD']
   ];
@@ -52,8 +53,79 @@ export class TradingService {
   private etfSymbols: string[] = ['SPY','QQQ','IWM','DIA','VTI','VWO','EEM','GLD','SLV','TLT'];
 
   constructor(private http: HttpClient) {
+    this.loadFromStorage(); // ✅ NOUVEAU : Charger portfolio + cash
     this.loadCategory('STOCKS');
     this.startRealtimeSync();
+  }
+
+  // ===========================================================
+  // 🔹 GESTION LOCALSTORAGE
+  // ===========================================================
+
+  /**
+   * ✅ NOUVEAU : Charger portfolio et cash depuis localStorage
+   */
+  private loadFromStorage(): void {
+    try {
+      // Charger le portfolio
+      const storedPortfolio = localStorage.getItem(this.PORTFOLIO_KEY);
+      if (storedPortfolio) {
+        const portfolio = JSON.parse(storedPortfolio);
+        this.portfolio$.next(portfolio);
+        console.log('♻️ Portfolio chargé depuis localStorage:', portfolio.length, 'positions');
+      }
+
+      // Charger le cash
+      const storedCash = localStorage.getItem(this.CASH_KEY);
+      if (storedCash) {
+        const cash = parseFloat(storedCash);
+        this.cash$.next(cash);
+        this.cashInitialized = true; // ✅ Important !
+        console.log('💰 Cash chargé depuis localStorage:', cash);
+      }
+    } catch (error) {
+      console.error('❌ Erreur chargement localStorage:', error);
+    }
+  }
+
+  /**
+   * ✅ NOUVEAU : Sauvegarder le portfolio dans localStorage
+   */
+  private savePortfolioToStorage(): void {
+    try {
+      const portfolio = this.portfolio$.value;
+      localStorage.setItem(this.PORTFOLIO_KEY, JSON.stringify(portfolio));
+      console.log('💾 Portfolio sauvegardé:', portfolio.length, 'positions');
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde portfolio:', error);
+    }
+  }
+
+  /**
+   * ✅ NOUVEAU : Sauvegarder le cash dans localStorage
+   */
+  private saveCashToStorage(): void {
+    try {
+      const cash = this.cash$.value;
+      localStorage.setItem(this.CASH_KEY, cash.toString());
+      console.log('💾 Cash sauvegardé:', cash);
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde cash:', error);
+    }
+  }
+
+  /**
+   * ✅ NOUVEAU : Réinitialiser TOUT (pour debug)
+   */
+  resetAll(): void {
+    if (confirm('⚠️ Voulez-vous vraiment réinitialiser votre portfolio et votre cash ?')) {
+      localStorage.removeItem(this.PORTFOLIO_KEY);
+      localStorage.removeItem(this.CASH_KEY);
+      this.portfolio$.next([]);
+      this.cash$.next(0);
+      this.cashInitialized = false;
+      console.log('🔄 Portfolio et cash réinitialisés');
+    }
   }
 
   // ===========================================================
@@ -75,12 +147,11 @@ export class TradingService {
     return m[base] || base;
   }
 
-  /** Simulation stable du % si l’API n’en donne pas */
   private simulatePct(symbol: string, priceNow: number): number {
     let h = 0;
     for (let i = 0; i < symbol.length; i++) h = (h * 31 + symbol.charCodeAt(i)) >>> 0;
-    const rnd = ((h % 201) - 100) / 100; // [-1.00 .. +1.00]
-    return +(rnd * 0.6).toFixed(2);      // +/- 0.60%
+    const rnd = ((h % 201) - 100) / 100;
+    return +(rnd * 0.6).toFixed(2);
   }
 
   // ===========================================================
@@ -124,7 +195,6 @@ export class TradingService {
     }
 
     this.assets$.next(assets);
-    // premier batch léger
     assets.slice(0, 5).forEach(a => this.fetchRealPrice(a.symbol, cat));
   }
 
@@ -172,8 +242,7 @@ export class TradingService {
           }
         }
       } else {
-        // FOREX / METALS — TwelveData
-        const encoded = encodeURIComponent(symbol); // "EUR/USD" -> "EUR%2FUSD"
+        const encoded = encodeURIComponent(symbol);
         const q = await this.fetchWithRetry(
           `${this.TWELVE_BASE}/quote?symbol=${encoded}&apikey=${this.TWELVE_KEY}`
         );
@@ -209,8 +278,8 @@ export class TradingService {
   // 🔹 Rafraîchissement progressif (anti-quota)
   // ===========================================================
   startRealtimeSync(): void {
-    const REFRESH_INTERVAL = 15000;   // 15s
-    const DELAY_BETWEEN_CALLS = 1200; // 1.2s entre deux symboles
+    const REFRESH_INTERVAL = 15000;
+    const DELAY_BETWEEN_CALLS = 1200;
 
     timer(0, REFRESH_INTERVAL).pipe(
       concatMap(() => {
@@ -256,15 +325,16 @@ export class TradingService {
     );
     this.assets$.next(updated as Asset[]);
 
-    // propage le prix aux positions
+    // Propage le prix aux positions
     const updatedPortfolio = this.portfolio$.value.map(p =>
       p.symbol === symbol ? { ...p, currentPrice: newPrice } : p
     );
     this.portfolio$.next(updatedPortfolio);
+    this.savePortfolioToStorage(); // ✅ Sauvegarder après mise à jour prix
   }
 
   // ===========================================================
-  // 🔹 Portfolio utils
+  // 🔹 Portfolio utils (AVEC SAUVEGARDE)
   // ===========================================================
   addPosition(symbol: string, quantity: number, price: number): void {
     const curr     = this.portfolio$.value;
@@ -283,6 +353,8 @@ export class TradingService {
       const newPos: Position = { symbol, quantity, avgPrice: price, currentPrice: price };
       this.portfolio$.next([...curr, newPos]);
     }
+
+    this.savePortfolioToStorage(); // ✅ Sauvegarder
   }
 
   removePosition(symbol: string, quantity: number): void {
@@ -290,26 +362,30 @@ export class TradingService {
       .map(p => p.symbol === symbol ? { ...p, quantity: p.quantity - quantity } : p)
       .filter(p => p.quantity > 0);
     this.portfolio$.next(next);
+    this.savePortfolioToStorage(); // ✅ Sauvegarder
   }
 
   // ===========================================================
-  // 🔹 Gestion du CASH (centralisée)
+  // 🔹 Gestion du CASH (AVEC SAUVEGARDE)
   // ===========================================================
   setCash(amount: number): void {
     this.cashInitialized = true;
     this.cash$.next(amount);
+    this.saveCashToStorage(); // ✅ Sauvegarder
   }
 
   debitCash(amount: number): void {
     this.cashInitialized = true;
     const current = this.cash$.value;
     this.cash$.next(current - amount);
+    this.saveCashToStorage(); // ✅ Sauvegarder
   }
 
   creditCash(amount: number): void {
     this.cashInitialized = true;
     const current = this.cash$.value;
     this.cash$.next(current + amount);
+    this.saveCashToStorage(); // ✅ Sauvegarder
   }
 
   isCashInitialized(): boolean {
@@ -326,7 +402,7 @@ export class TradingService {
 
   selectAsset(symbol: string): void {
     this.selectedAsset$.next(symbol);
-    this.fetchRealPrice(symbol, this.selectedCategory$.value); // refresh immédiat du clic
+    this.fetchRealPrice(symbol, this.selectedCategory$.value);
   }
 
   getTotalPortfolioValue(): number {
