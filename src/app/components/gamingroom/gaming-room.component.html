@@ -41,32 +41,61 @@
 
   <!-- MAIN CONTENT -->
   <div class="main-content">
-    <!-- WATCHLIST (gauche) -->
-    <div class="panel watchlist-panel">
-      <div class="panel-header">
-        <h3>🎯 Marché</h3>
+   <!-- WATCHLIST (gauche) -->
+<div class="panel watchlist-panel">
+  <div class="panel-header">
+    <h3>🎯 Marché</h3>
+  </div>
+  
+  <!-- ✅ NOUVEAU : Bandeau de catégories -->
+  <div class="market-tabs">
+    <button 
+      class="tab" 
+      [class.active]="selectedCategory==='STOCKS'" 
+      (click)="changeCategory('STOCKS')">
+      📈 ACTIONS
+    </button>
+    <button 
+      class="tab" 
+      [class.active]="selectedCategory==='FOREX'" 
+      (click)="changeCategory('FOREX')">
+      💱 DEVISES
+    </button>
+    <button 
+      class="tab" 
+      [class.active]="selectedCategory==='METALS'" 
+      (click)="changeCategory('METALS')">
+      🪙 MÉTAUX
+    </button>
+    <button 
+      class="tab" 
+      [class.active]="selectedCategory==='ETFS'" 
+      (click)="changeCategory('ETFS')">
+      🏛️ ETF
+    </button>
+  </div>
+  
+  <div class="watchlist-content">
+    <div class="stock-row"
+         *ngFor="let s of symbols"
+         [class.selected]="s === selectedSymbol"
+         (click)="selectSymbol(s)">
+      <div class="stock-symbol">{{ s }}</div>
+      <div class="stock-price">
+        {{ marketData[s]?.price | number:'1.2-2' }}
       </div>
-      <div class="watchlist-content">
-        <div class="stock-row"
-             *ngFor="let s of symbols"
-             [class.selected]="s === selectedSymbol"
-             (click)="selectSymbol(s)">
-          <div class="stock-symbol">{{ s }}</div>
-          <div class="stock-price">
-            {{ marketData[s]?.price | number:'1.2-2' }}
-          </div>
-          <div class="stock-change"
-               [class.positive]="(marketData[s]?.changePercent || 0) >= 0"
-               [class.negative]="(marketData[s]?.changePercent || 0) < 0">
-            <span class="change-icon">
-              {{ (marketData[s]?.changePercent || 0) >= 0 ? '▲' : '▼' }}
-            </span>
-            {{ (marketData[s]?.changePercent || 0) >= 0 ? '+' : '' }}
-            {{ (marketData[s]?.changePercent || 0) | number:'1.2-2' }}%
-          </div>
-        </div>
+      <div class="stock-change"
+           [class.positive]="(marketData[s]?.changePercent || 0) >= 0"
+           [class.negative]="(marketData[s]?.changePercent || 0) < 0">
+        <span class="change-icon">
+          {{ (marketData[s]?.changePercent || 0) >= 0 ? '▲' : '▼' }}
+        </span>
+        {{ (marketData[s]?.changePercent || 0) >= 0 ? '+' : '' }}
+        {{ (marketData[s]?.changePercent || 0) | number:'1.2-2' }}%
       </div>
     </div>
+  </div>
+</div>
 
     <!-- CENTER (chart + orderbook + activity) -->
     <div class="center-section">

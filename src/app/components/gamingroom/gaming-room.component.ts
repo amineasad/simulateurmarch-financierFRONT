@@ -18,6 +18,9 @@ import { MarketDataService, Quote } from '../../services/market-data.service';
 import { SessionOrderBookService } from '../../services/session-order-book.service';
 import { SessionOrderBookDepth } from '../../models/market.model';
 
+// ✅ NOUVEAU : Type pour les catégories
+export type AssetCategory = 'STOCKS' | 'FOREX' | 'METALS' | 'ETFS';
+
 interface StockData {
   price: number;
   change: number;
@@ -51,6 +54,18 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
   OrderSide = OrderSide;
   OrderType = OrderType;
 
+  // ✅ NOUVEAU : Catégories d'actifs
+  selectedCategory: AssetCategory = 'STOCKS';
+  
+  // ✅ NOUVEAU : Symboles par catégorie
+  private stockSymbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NVDA', 'PYPL', 'INTC', 'AMD'];
+  private forexSymbols = ['EUR/USD', 'USD/JPY', 'GBP/USD', 'USD/CHF', 'AUD/USD', 'USD/CAD', 'NZD/USD', 'EUR/GBP'];
+  private metalSymbols = ['XAU/USD', 'XAG/USD', 'XPT/USD', 'XPD/USD'];
+  private etfSymbols = ['SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'VWO', 'EEM', 'GLD', 'SLV', 'TLT'];
+
+  // ✅ MODIFIÉ : Liste dynamique selon la catégorie
+  symbols: string[] = [];
+  
   // Session
   sessionId!: number;
   session: TradingSession | null = null;
@@ -63,7 +78,6 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
   private timerSub?: Subscription;
 
   // Marché
-  symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX'];
   marketData: Record<string, StockData> = {};
   private quotesSub?: Subscription;
 
@@ -90,8 +104,14 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
     'TSLA': 'NASDAQ:TSLA',
     'META': 'NASDAQ:META',
     'NVDA': 'NASDAQ:NVDA',
-    'NFLX': 'NASDAQ:NFLX'
+    'NFLX': 'NASDAQ:NFLX',
+    'EUR/USD': 'FX:EURUSD',
+    'USD/JPY': 'FX:USDJPY',
+    'GBP/USD': 'FX:GBPUSD',
+    'XAU/USD': 'TVC:GOLD',
+    'XAG/USD': 'TVC:SILVER'
   };
+  
   get tradingViewSymbol(): string {
     return this.symbolMap[this.selectedSymbol] || 'NASDAQ:AAPL';
   }
@@ -119,6 +139,9 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
       this.router.navigate(['/login']);
       return;
     }
+
+    // ✅ NOUVEAU : Charger la catégorie par défaut
+    this.loadCategorySymbols('STOCKS');
 
     this.route.params.subscribe(params => {
       this.sessionId = +params['id'];
@@ -159,6 +182,40 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
     this.marketDataService.stopPolling();
     this.depthStop$.next();
     this.depthStop$.complete();
+  }
+
+  // ====== NOUVEAU : Gestion des catégories ======
+  changeCategory(cat: AssetCategory): void {
+    if (cat === this.selectedCategory) return;
+    
+    this.selectedCategory = cat;
+    this.loadCategorySymbols(cat);
+    
+    // Sélectionner le premier symbole de la nouvelle catégorie
+    if (this.symbols.length > 0) {
+      this.selectSymbol(this.symbols[0]);
+    }
+    
+    // Redémarrer le polling avec les nouveaux symboles
+    this.marketDataService.startPolling(this.symbols, 2000);
+  }
+
+  private loadCategorySymbols(cat: AssetCategory): void {
+    switch (cat) {
+      case 'STOCKS':
+        this.symbols = [...this.stockSymbols];
+        break;
+      case 'FOREX':
+        this.symbols = [...this.forexSymbols];
+        break;
+      case 'METALS':
+        this.symbols = [...this.metalSymbols];
+        break;
+      case 'ETFS':
+        this.symbols = [...this.etfSymbols];
+        break;
+    }
+    console.log(`✅ Catégorie ${cat} chargée:`, this.symbols.length, 'symboles');
   }
 
   // ====== Session ======
@@ -381,16 +438,13 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
         });
         this.activityFeed = this.activityFeed.slice(0, 20);
 
-        // Rafraîchir cash & positions
         this.loadParticipation();
         this.loadPositions();
 
-        // Rafraîchir immédiatement le carnet
         this.sessionOrderBookService
           .getDepth(this.sessionId, this.selectedSymbol, 10)
           .subscribe({ next: (d) => { this.depth = d; } });
 
-        // Message
         if (saved.status === OrderStatus.EXECUTED) {
           this.showSuccessMessage('✅ Ordre exécuté avec succès !');
         } else if (saved.status === OrderStatus.REJECTED) {
