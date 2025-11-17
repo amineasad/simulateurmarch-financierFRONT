@@ -27,15 +27,36 @@
     <div class="asset-details">
       <div class="detail-item">
         <span class="label">BID</span>
-        <span class="value">{{ selectedAsset.bid }}</span>
+        <span class="value">{{ selectedAsset.bid | number:'1.2-5' }}</span>
       </div>
       <div class="detail-item">
         <span class="label">ASK</span>
-        <span class="value">{{ selectedAsset.ask }}</span>
+        <span class="value">{{ selectedAsset.ask | number:'1.2-5' }}</span>
       </div>
       <div class="detail-item">
-        <span class="label">Volume</span>
-        <span class="value">{{ selectedAsset.volume }}</span>
+        <span class="label">Spread</span>
+        <span class="value">{{ (selectedAsset.ask - selectedAsset.bid) | number:'1.2-5' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Carnet d'ordres (aperçu) -->
+  <div class="orderbook-preview" *ngIf="currentOrderBook && orderForm.type === 'LIMIT'">
+    <h3>📖 Carnet d'ordres actuel</h3>
+    <div class="orderbook-grid">
+      <div class="bids-column">
+        <div class="column-header">BID (Acheteurs)</div>
+        <div class="orderbook-entry" *ngFor="let bid of currentOrderBook.bids.slice(0, 3)">
+          <span class="price buy">{{ bid.price | number:'1.2-2' }}€</span>
+          <span class="quantity">{{ bid.quantity }}</span>
+        </div>
+      </div>
+      <div class="asks-column">
+        <div class="column-header">ASK (Vendeurs)</div>
+        <div class="orderbook-entry" *ngFor="let ask of currentOrderBook.asks.slice(0, 3)">
+          <span class="price sell">{{ ask.price | number:'1.2-2' }}€</span>
+          <span class="quantity">{{ ask.quantity }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -49,13 +70,13 @@
         class="btn-side btn-buy"
         [class.active]="orderForm.side === 'BUY'"
         (click)="changeOrderSide('BUY')">
-        ACHETER
+        🟢 ACHETER
       </button>
       <button 
         class="btn-side btn-sell"
         [class.active]="orderForm.side === 'SELL'"
         (click)="changeOrderSide('SELL')">
-        VENDRE
+        🔴 VENDRE
       </button>
     </div>
 
@@ -67,15 +88,14 @@
           class="btn-type"
           [class.active]="orderForm.type === 'MARKET'"
           (click)="changeOrderType('MARKET')">
-          Marché
+          ⚡ Marché (Immédiat)
         </button>
         <button 
           class="btn-type"
           [class.active]="orderForm.type === 'LIMIT'"
           (click)="changeOrderType('LIMIT')">
-          Limite
+          📝 Limite (Prix fixe)
         </button>
-       
       </div>
     </div>
 
@@ -91,13 +111,33 @@
       </div>
       <div class="form-group">
         <label class="form-label">Prix (€)</label>
-        <input 
-          type="number" 
-          [(ngModel)]="orderForm.price"
-          step="0.01"
-          [disabled]="orderForm.type === 'MARKET'"
-          class="form-input">
+        <div class="price-input-group">
+          <input 
+            type="number" 
+            [(ngModel)]="orderForm.price"
+            (ngModelChange)="onPriceChange()"
+            step="0.01"
+            [disabled]="orderForm.type === 'MARKET'"
+            class="form-input">
+          
+          <!-- ✅ Bouton Prix Optimal -->
+          <button 
+            *ngIf="orderForm.type === 'LIMIT'"
+            class="btn-optimal-price"
+            (click)="setOptimalPrice()"
+            title="Définir le meilleur prix pour être premier dans le carnet">
+            🎯 Optimal
+          </button>
+        </div>
       </div>
+    </div>
+
+    <!-- ✅ Indicateur de position dans le carnet -->
+    <div 
+      class="price-position-indicator" 
+      *ngIf="pricePositionMessage && orderForm.type === 'LIMIT'"
+      [ngClass]="pricePositionClass">
+      {{ pricePositionMessage }}
     </div>
 
     <!-- Résumé -->
@@ -110,6 +150,10 @@
         <span class="label">Cash disponible</span>
         <span class="value cash">{{ cashAvailable | number:'1.2-2' }}€</span>
       </div>
+      <div class="summary-row" *ngIf="orderForm.side === 'BUY'">
+        <span class="label">Après achat</span>
+        <span class="value">{{ (cashAvailable - getOrderTotal()) | number:'1.2-2' }}€</span>
+      </div>
     </div>
 
     <!-- Messages -->
@@ -117,8 +161,8 @@
       ⚠️ {{ errorMessage }}
     </div>
 
-    <div class="message success-message" *ngIf="successMessage">
-      ✓ {{ successMessage }}
+    <div class="message success-message" *ngIf="successMessage" [style.white-space]="'pre-line'">
+      {{ successMessage }}
     </div>
 
     <!-- Bouton Submit -->
@@ -129,9 +173,12 @@
       [disabled]="isLoading"
       (click)="placeOrder()">
       <span *ngIf="!isLoading">
-        {{ orderForm.side === 'BUY' ? '🟢 ACHETER' : '🔴 VENDRE' }} {{ orderForm.symbol }}
+        {{ orderForm.type === 'MARKET' ? '⚡' : '📝' }}
+        {{ orderForm.side === 'BUY' ? 'ACHETER' : 'VENDRE' }} 
+        {{ orderForm.quantity }} {{ orderForm.symbol }}
+        @ {{ orderForm.price | number:'1.2-2' }}€
       </span>
-      <span *ngIf="isLoading">Traitement...</span>
+      <span *ngIf="isLoading">⏳ Traitement...</span>
     </button>
 
   </div>

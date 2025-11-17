@@ -1,5 +1,5 @@
 // ====================================================================
-// src/app/services/local-orderbook.service.ts - AVEC LOCALSTORAGE COMPLET
+// src/app/services/local-orderbook.service.ts - VERSION CORRIGÉE
 // ====================================================================
 
 import { Injectable } from '@angular/core';
@@ -16,7 +16,6 @@ export interface LocalOrderBook {
   lastPrice: number;
 }
 
-// ✅ Interface pour tracker MES ordres
 export interface PendingOrder {
   id: string;
   userId: string;
@@ -27,30 +26,40 @@ export interface PendingOrder {
   timestamp: Date;
 }
 
+// ✅ NOUVEAU : Interface pour les trades exécutés
+export interface ExecutedTrade {
+  id: string;
+  symbol: string;
+  buyUserId: string;
+  sellUserId: string;
+  price: number;
+  quantity: number;
+  timestamp: Date;
+}
+
 @Injectable({ providedIn: 'root' })
 export class LocalOrderBookService {
   private orderBooks$ = new BehaviorSubject<Record<string, LocalOrderBook>>({});
-  
-  // ✅ BehaviorSubject pour MES ordres en attente
   private myPendingOrders$ = new BehaviorSubject<PendingOrder[]>([]);
   
-  // ✅ Clés localStorage
+  // ✅ NOUVEAU : Stream des trades exécutés
+  private executedTrades$ = new BehaviorSubject<ExecutedTrade[]>([]);
+  
   private readonly STORAGE_KEY = 'tradix_orderbooks_v2';
   private readonly MY_ORDERS_KEY = 'tradix_my_orders_v2';
+  private readonly TRADES_KEY = 'tradix_executed_trades_v2';
 
   constructor() {
     console.log('📚 LocalOrderBookService initialisé');
     this.loadOrderBooksFromStorage();
     this.loadMyOrdersFromStorage();
+    this.loadExecutedTrades();
   }
 
   // ===============================================================
   // 🔹 GESTION LOCALSTORAGE - CARNETS D'ORDRES
   // ===============================================================
 
-  /**
-   * ✅ Charger les carnets depuis localStorage
-   */
   private loadOrderBooksFromStorage(): void {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
@@ -69,9 +78,6 @@ export class LocalOrderBookService {
     }
   }
 
-  /**
-   * ✅ Sauvegarder les carnets dans localStorage
-   */
   private saveOrderBooksToStorage(): void {
     try {
       const current = this.orderBooks$.value;
@@ -86,16 +92,12 @@ export class LocalOrderBookService {
   // 🔹 GESTION LOCALSTORAGE - MES ORDRES
   // ===============================================================
 
-  /**
-   * ✅ Charger MES ordres depuis localStorage
-   */
   private loadMyOrdersFromStorage(): void {
     try {
       const stored = localStorage.getItem(this.MY_ORDERS_KEY);
       
       if (stored) {
         const parsed = JSON.parse(stored);
-        // Reconvertir les timestamps en Date
         const orders = parsed.map((o: any) => ({
           ...o,
           timestamp: new Date(o.timestamp)
@@ -110,9 +112,6 @@ export class LocalOrderBookService {
     }
   }
 
-  /**
-   * ✅ Sauvegarder MES ordres dans localStorage
-   */
   private saveMyOrdersToStorage(): void {
     try {
       const orders = this.myPendingOrders$.value;
@@ -124,12 +123,41 @@ export class LocalOrderBookService {
   }
 
   // ===============================================================
+  // 🔹 GESTION LOCALSTORAGE - TRADES EXÉCUTÉS
+  // ===============================================================
+
+  private loadExecutedTrades(): void {
+    try {
+      const stored = localStorage.getItem(this.TRADES_KEY);
+      
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const trades = parsed.map((t: any) => ({
+          ...t,
+          timestamp: new Date(t.timestamp)
+        }));
+        this.executedTrades$.next(trades);
+        console.log('📊 Trades chargés:', trades.length);
+      }
+    } catch (error) {
+      console.error('❌ Erreur chargement trades:', error);
+    }
+  }
+
+  private saveExecutedTrades(): void {
+    try {
+      const trades = this.executedTrades$.value;
+      localStorage.setItem(this.TRADES_KEY, JSON.stringify(trades));
+      console.log('💾 Trades sauvegardés:', trades.length);
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde trades:', error);
+    }
+  }
+
+  // ===============================================================
   // 🔹 INITIALISATION DES CARNETS
   // ===============================================================
 
-  /**
-   * ✅ Initialise les carnets pour TOUS les symboles
-   */
   private initializeDefaultOrderBooks(): void {
     const stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NVDA', 'PYPL', 'INTC', 'AMD'];
     const forex = ['EUR/USD', 'USD/JPY', 'GBP/USD', 'USD/CHF', 'AUD/USD', 'USD/CAD', 'NZD/USD', 'EUR/GBP'];
@@ -158,13 +186,10 @@ export class LocalOrderBookService {
     });
 
     this.orderBooks$.next(initial);
-    this.saveOrderBooksToStorage(); // ✅ Sauvegarder immédiatement
+    this.saveOrderBooksToStorage();
     console.log(`📖 ${allSymbols.length} carnets initialisés et sauvegardés`);
   }
 
-  /**
-   * ✅ Génère un orderbook réaliste
-   */
   private generateOrderBook(basePrice: number, symbol: string): LocalOrderBook {
     const bids: OrderBookEntry[] = [];
     const asks: OrderBookEntry[] = [];
@@ -177,12 +202,13 @@ export class LocalOrderBookService {
     }
 
     const tickSize = basePrice * spreadPercent;
+    const decimals = symbol.includes('/') ? 5 : 2;
 
     for (let i = 0; i < 5; i++) {
       const price = basePrice - (i + 1) * tickSize;
       const quantity = Math.floor(100 + Math.random() * 2000);
       bids.push({ 
-        price: +price.toFixed(symbol.includes('/') ? 5 : 2), 
+        price: +price.toFixed(decimals), 
         quantity 
       });
     }
@@ -191,7 +217,7 @@ export class LocalOrderBookService {
       const price = basePrice + (i + 1) * tickSize;
       const quantity = Math.floor(100 + Math.random() * 2000);
       asks.push({ 
-        price: +price.toFixed(symbol.includes('/') ? 5 : 2), 
+        price: +price.toFixed(decimals), 
         quantity 
       });
     }
@@ -199,7 +225,7 @@ export class LocalOrderBookService {
     return {
       bids: bids.sort((a, b) => b.price - a.price),
       asks: asks.sort((a, b) => a.price - b.price),
-      lastPrice: +basePrice.toFixed(symbol.includes('/') ? 5 : 2)
+      lastPrice: +basePrice.toFixed(decimals)
     };
   }
 
@@ -207,9 +233,6 @@ export class LocalOrderBookService {
   // 🔹 OPÉRATIONS SUR LES CARNETS
   // ===============================================================
 
-  /**
-   * ✅ Récupérer le carnet d'un symbole
-   */
   getOrderBook(symbol: string): Observable<LocalOrderBook | null> {
     return new Observable(observer => {
       const book = this.orderBooks$.value[symbol];
@@ -228,9 +251,6 @@ export class LocalOrderBookService {
     });
   }
 
-  /**
-   * ✅ Vérifie si un ordre LIMIT peut être exécuté immédiatement
-   */
   canExecuteLimitOrder(symbol: string, side: 'BUY' | 'SELL', limitPrice: number): number | null {
     const book = this.orderBooks$.value[symbol];
     
@@ -250,7 +270,102 @@ export class LocalOrderBookService {
   }
 
   /**
-   * ✅ Ajouter un ordre LIMIT au carnet ET le tracker
+   * ✅ NOUVEAU : Vérifier et exécuter les matchs entre ordres
+   * Retourne les ordres exécutés pour notifier les users
+   */
+  private checkAndExecuteMatches(symbol: string): { buyOrderId: string; sellOrderId: string; buyUserId: string; sellUserId: string; price: number; quantity: number }[] {
+    const books = this.orderBooks$.value;
+    const book = books[symbol];
+    const matches: { buyOrderId: string; sellOrderId: string; buyUserId: string; sellUserId: string; price: number; quantity: number }[] = [];
+
+    if (!book || book.bids.length === 0 || book.asks.length === 0) {
+      return matches;
+    }
+
+    // Tant qu'il y a des ordres qui peuvent matcher
+    while (book.bids.length > 0 && book.asks.length > 0) {
+      const bestBid = book.bids[0];
+      const bestAsk = book.asks[0];
+
+      // ✅ Si le meilleur BID >= meilleur ASK → MATCH !
+      if (bestBid.price >= bestAsk.price) {
+        const matchPrice = bestAsk.price; // Prix d'exécution = prix du vendeur
+        const matchQty = Math.min(bestBid.quantity, bestAsk.quantity);
+
+        console.log(`🔥 MATCH trouvé pour ${symbol}: ${matchQty} @ ${matchPrice}€`);
+
+        // Récupérer les IDs des ordres et des users
+        const buyOrderId = (bestBid as any).userOrderId || 'market';
+        const sellOrderId = (bestAsk as any).userOrderId || 'market';
+        
+        // Récupérer les userId depuis myPendingOrders
+        const buyOrder = this.myPendingOrders$.value.find(o => o.id === buyOrderId);
+        const sellOrder = this.myPendingOrders$.value.find(o => o.id === sellOrderId);
+
+        const buyUserId = buyOrder?.userId || 'anonymous';
+        const sellUserId = sellOrder?.userId || 'anonymous';
+
+        matches.push({
+          buyOrderId,
+          sellOrderId,
+          buyUserId,
+          sellUserId,
+          price: matchPrice,
+          quantity: matchQty
+        });
+
+        // ✅ Enregistrer le trade
+        const trade: ExecutedTrade = {
+          id: `trade-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          symbol,
+          buyUserId,
+          sellUserId,
+          price: matchPrice,
+          quantity: matchQty,
+          timestamp: new Date()
+        };
+
+        const currentTrades = this.executedTrades$.value;
+        this.executedTrades$.next([trade, ...currentTrades]);
+        this.saveExecutedTrades();
+
+        // ✅ Retirer les ordres exécutés de myPendingOrders
+        if (buyOrder) {
+          this.removeMyOrder(buyOrderId);
+        }
+        if (sellOrder) {
+          this.removeMyOrder(sellOrderId);
+        }
+
+        // Réduire les quantités
+        bestBid.quantity -= matchQty;
+        bestAsk.quantity -= matchQty;
+
+        // Supprimer si quantité = 0
+        if (bestBid.quantity <= 0) {
+          book.bids.shift();
+        }
+        if (bestAsk.quantity <= 0) {
+          book.asks.shift();
+        }
+
+        // Mettre à jour le lastPrice
+        book.lastPrice = matchPrice;
+      } else {
+        // Plus de match possible
+        break;
+      }
+    }
+
+    if (matches.length > 0) {
+      this.updateOrderBook(symbol, book);
+    }
+
+    return matches;
+  }
+
+  /**
+   * ✅ MODIFIÉ : Retourne les matches pour notification
    */
   addLimitOrder(
     symbol: string, 
@@ -258,7 +373,7 @@ export class LocalOrderBookService {
     price: number, 
     quantity: number,
     userId?: string
-  ): string {
+  ): { orderId: string; matches: any[] } {
     const books = this.orderBooks$.value;
     let book = books[symbol];
 
@@ -267,31 +382,39 @@ export class LocalOrderBookService {
       book = this.generateOrderBook(price, symbol);
     }
 
-    // Ajouter au carnet
+    const orderId = `${symbol}-${side}-${Date.now()}`;
+    
     if (side === 'BUY') {
       const existingBid = book.bids.find(b => b.price === price);
       if (existingBid) {
         existingBid.quantity += quantity;
+        (existingBid as any).userOrderId = orderId;
       } else {
-        book.bids.push({ price, quantity });
+        const newBid: any = { price, quantity, userOrderId: orderId };
+        book.bids.push(newBid);
         book.bids.sort((a, b) => b.price - a.price);
-        if (book.bids.length > 10) book.bids = book.bids.slice(0, 10);
+        if (book.bids.length > 10) {
+          book.bids = book.bids.filter((b: any) => b.userOrderId || book.bids.indexOf(b) < 10);
+        }
       }
     } else {
       const existingAsk = book.asks.find(a => a.price === price);
       if (existingAsk) {
         existingAsk.quantity += quantity;
+        (existingAsk as any).userOrderId = orderId;
       } else {
-        book.asks.push({ price, quantity });
+        const newAsk: any = { price, quantity, userOrderId: orderId };
+        book.asks.push(newAsk);
         book.asks.sort((a, b) => a.price - b.price);
-        if (book.asks.length > 10) book.asks = book.asks.slice(0, 10);
+        if (book.asks.length > 10) {
+          book.asks = book.asks.filter((a: any) => a.userOrderId || book.asks.indexOf(a) < 10);
+        }
       }
     }
 
     this.updateOrderBook(symbol, book);
 
-    // ✅ Tracker MON ordre dans la liste séparée
-    const orderId = `${symbol}-${side}-${Date.now()}`;
+    // ✅ Tracker MON ordre
     const myOrder: PendingOrder = {
       id: orderId,
       userId: userId || 'anonymous',
@@ -304,15 +427,16 @@ export class LocalOrderBookService {
 
     const currentOrders = this.myPendingOrders$.value;
     this.myPendingOrders$.next([...currentOrders, myOrder]);
-    this.saveMyOrdersToStorage(); // ✅ Sauvegarder
+    this.saveMyOrdersToStorage();
 
-    console.log(`✅ Ordre LIMIT ajouté et tracké: ${orderId}`);
-    return orderId;
+    console.log(`✅ Ordre LIMIT ajouté: ${orderId}`);
+
+    // ✅ NOUVEAU : Vérifier les matchs automatiques
+    const matches = this.checkAndExecuteMatches(symbol);
+
+    return { orderId, matches };
   }
 
-  /**
-   * ✅ Simuler l'exécution d'un ordre MARKET
-   */
   executeMarketOrder(symbol: string, side: 'BUY' | 'SELL', quantity: number): number {
     const books = this.orderBooks$.value;
     let book = books[symbol];
@@ -369,8 +493,7 @@ export class LocalOrderBookService {
   }
 
   /**
-   * ✅ Mettre à jour le carnet avec un nouveau prix
-   * ⚠️ IMPORTANT : Ne modifie QUE le lastPrice, PAS les ordres existants !
+   * ✅ LOGIQUE HYBRIDE : Ajuste progressivement les prix sans tout régénérer
    */
   updateMarketPrice(symbol: string, newPrice: number): void {
     const books = this.orderBooks$.value;
@@ -379,31 +502,70 @@ export class LocalOrderBookService {
     if (!book) {
       book = this.generateOrderBook(newPrice, symbol);
       this.updateOrderBook(symbol, book);
-    } else {
-      // ✅ CHANGEMENT : On met à jour SEULEMENT le lastPrice
-      // On NE TOUCHE PAS aux ordres existants (bids/asks)
-      book.lastPrice = +newPrice.toFixed(symbol.includes('/') ? 5 : 2);
-      this.updateOrderBook(symbol, book);
+      return;
     }
+
+    const decimals = symbol.includes('/') ? 5 : 2;
+    const oldPrice = book.lastPrice;
+    const priceDiff = Math.abs(newPrice - oldPrice);
+    const changePercent = (priceDiff / oldPrice) * 100;
+
+    // ✅ Si changement < 0.5%, on garde les ordres et on ajuste juste le lastPrice
+    if (changePercent < 0.5) {
+      book.lastPrice = +newPrice.toFixed(decimals);
+      this.updateOrderBook(symbol, book);
+      return;
+    }
+
+    // ✅ Si changement > 0.5%, on ajuste progressivement les prix
+    let spreadPercent: number;
+    if (symbol.includes('/')) {
+      spreadPercent = 0.0001 + Math.random() * 0.0004;
+    } else {
+      spreadPercent = 0.0002 + Math.random() * 0.0008;
+    }
+
+    const tickSize = newPrice * spreadPercent;
+
+    // ✅ Ajuster les BIDs : déplacer vers le nouveau prix
+    const adjustedBids: OrderBookEntry[] = book.bids.map((bid, i) => {
+      const targetPrice = newPrice - (i + 1) * tickSize;
+      // Moyenne entre ancien et nouveau prix pour transition douce
+      const adjustedPrice = (bid.price + targetPrice) / 2;
+      return {
+        price: +adjustedPrice.toFixed(decimals),
+        quantity: bid.quantity
+      };
+    });
+
+    // ✅ Ajuster les ASKs : déplacer vers le nouveau prix
+    const adjustedAsks: OrderBookEntry[] = book.asks.map((ask, i) => {
+      const targetPrice = newPrice + (i + 1) * tickSize;
+      const adjustedPrice = (ask.price + targetPrice) / 2;
+      return {
+        price: +adjustedPrice.toFixed(decimals),
+        quantity: ask.quantity
+      };
+    });
+
+    book.bids = adjustedBids.sort((a, b) => b.price - a.price);
+    book.asks = adjustedAsks.sort((a, b) => a.price - b.price);
+    book.lastPrice = +newPrice.toFixed(decimals);
+
+    this.updateOrderBook(symbol, book);
   }
 
-  /**
-   * ✅ Mettre à jour le carnet et sauvegarder
-   */
   private updateOrderBook(symbol: string, book: LocalOrderBook): void {
     const updated = { ...this.orderBooks$.value };
     updated[symbol] = book;
     this.orderBooks$.next(updated);
-    this.saveOrderBooksToStorage(); // ✅ Sauvegarder automatiquement
+    this.saveOrderBooksToStorage();
   }
 
   // ===============================================================
   // 🔹 GESTION DE MES ORDRES
   // ===============================================================
 
-  /**
-   * ✅ Récupérer MES ordres en attente
-   */
   getMyPendingOrders(symbol?: string): Observable<PendingOrder[]> {
     return new Observable(observer => {
       const orders = this.myPendingOrders$.value;
@@ -415,16 +577,10 @@ export class LocalOrderBookService {
     });
   }
 
-  /**
-   * ✅ Stream de MES ordres (pour s'abonner aux changements)
-   */
   streamMyPendingOrders(): Observable<PendingOrder[]> {
     return this.myPendingOrders$.asObservable();
   }
 
-  /**
-   * ✅ Annuler un de MES ordres
-   */
   cancelMyOrder(orderId: string): void {
     const orders = this.myPendingOrders$.value;
     const order = orders.find(o => o.id === orderId);
@@ -434,7 +590,6 @@ export class LocalOrderBookService {
       return;
     }
 
-    // Retirer du carnet
     const books = this.orderBooks$.value;
     const book = books[order.symbol];
     
@@ -459,20 +614,16 @@ export class LocalOrderBookService {
       this.updateOrderBook(order.symbol, book);
     }
 
-    // Retirer de mes ordres
     this.myPendingOrders$.next(orders.filter(o => o.id !== orderId));
-    this.saveMyOrdersToStorage(); // ✅ Sauvegarder
+    this.saveMyOrdersToStorage();
 
     console.log(`🗑️ Ordre ${orderId} annulé`);
   }
 
-  /**
-   * ✅ Supprimer un ordre après exécution
-   */
   removeMyOrder(orderId: string): void {
     const orders = this.myPendingOrders$.value;
     this.myPendingOrders$.next(orders.filter(o => o.id !== orderId));
-    this.saveMyOrdersToStorage(); // ✅ Sauvegarder
+    this.saveMyOrdersToStorage();
     console.log(`✅ Ordre ${orderId} retiré (exécuté)`);
   }
 
@@ -480,23 +631,14 @@ export class LocalOrderBookService {
   // 🔹 UTILITAIRES
   // ===============================================================
 
-  /**
-   * ✅ Stream de tous les carnets
-   */
   streamOrderBooks(): Observable<Record<string, LocalOrderBook>> {
     return this.orderBooks$.asObservable();
   }
 
-  /**
-   * ✅ Obtenir tous les symboles
-   */
   getAllSymbols(): string[] {
     return Object.keys(this.orderBooks$.value);
   }
 
-  /**
-   * ✅ Stats du carnet
-   */
   getBookStats(symbol: string): { bidLevels: number; askLevels: number; spread: number } | null {
     const book = this.orderBooks$.value[symbol];
     if (!book || book.bids.length === 0 || book.asks.length === 0) return null;
@@ -512,9 +654,6 @@ export class LocalOrderBookService {
     };
   }
 
-  /**
-   * ✅ Réinitialiser TOUT (pour debug/reset)
-   */
   resetAll(): void {
     if (confirm('⚠️ Voulez-vous vraiment réinitialiser tous les carnets et ordres ?')) {
       localStorage.removeItem(this.STORAGE_KEY);
@@ -525,12 +664,29 @@ export class LocalOrderBookService {
     }
   }
 
-  /**
-   * ✅ Effacer seulement MES ordres
-   */
   clearMyOrders(): void {
     this.myPendingOrders$.next([]);
     localStorage.removeItem(this.MY_ORDERS_KEY);
     console.log('🧹 Mes ordres effacés');
+  }
+
+  /**
+   * ✅ Récupérer les trades exécutés pour un user
+   */
+  getMyExecutedTrades(userId: string): Observable<ExecutedTrade[]> {
+    return new Observable(observer => {
+      const trades = this.executedTrades$.value.filter(
+        t => t.buyUserId === userId || t.sellUserId === userId
+      );
+      observer.next(trades);
+      observer.complete();
+    });
+  }
+
+  /**
+   * ✅ Stream des trades exécutés
+   */
+  streamExecutedTrades(): Observable<ExecutedTrade[]> {
+    return this.executedTrades$.asObservable();
   }
 }
