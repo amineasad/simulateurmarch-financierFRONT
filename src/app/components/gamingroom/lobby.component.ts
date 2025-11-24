@@ -130,7 +130,7 @@ joinSessionReplay(session: TradingSession): void {
 
       // 2) On démarre le moteur de replay côté backend
       const body = {
-        symbols: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META'],
+        symbols: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NVDA', 'PYPL', 'INTC', 'AMD','EUR/USD', 'USD/JPY', 'GBP/USD', 'USD/CHF', 'AUD/USD', 'USD/CAD', 'NZD/USD', 'EUR/GBP','XAU/USD', 'XAG/USD', 'XPT/USD', 'XPD/USD','SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'VWO', 'EEM', 'GLD', 'SLV', 'TLT'],
         mode: 'full'  // ou 'full' si tu veux la vraie année complète
       };
 
