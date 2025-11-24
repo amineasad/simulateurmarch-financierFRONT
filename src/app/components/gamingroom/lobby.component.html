@@ -114,12 +114,14 @@
 
       <!-- Actions -->
       <div class="card-actions">
-        <button 
-          class="btn-join" 
-          (click)="joinSession(session)"
-          [disabled]="session.status === 'CLOSED'">
-          🚀 Rejoindre
-        </button>
+       <button class="btn-primary" (click)="joinSession(session)">
+  🎮 Mode Live
+</button>
+
+<!-- Bouton Replay -->
+<button class="btn-secondary" (click)="joinSessionReplay(session)">
+  📼 Mode Replay
+</button>
       </div>
 
     </div>

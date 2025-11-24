@@ -15,16 +15,74 @@
           <span class="status" [style.background]="getStatusColor()">
             {{ getStatusLabel() }}
           </span>
+          <!-- Badge du mode -->
+          <span class="mode-badge" [class.live]="!isReplayMode" [class.replay]="isReplayMode">
+            {{ isReplayMode ? '📼 Replay' : '🎮 Live' }}
+          </span>
+          <!-- ✨ NOUVEAU : Badge ralenti actif -->
+          <span class="slow-motion-badge" *ngIf="isReplayMode && isSlowMotion()">
+            🐌 Ralenti actif
+          </span>
         </div>
       </div>
     </div>
 
+    <!-- AFFICHAGE CONDITIONNEL -->
     <div class="center">
-      <div class="timer-widget">
-        <div class="timer-label">Temps restant</div>
-        <div class="timer-value">{{ timeRemaining }}</div>
-        <div class="timer-bar">
-          <div class="timer-bar-fill" [style.width.%]="sessionProgress"></div>
+      <!-- Mode Live : Virtual Clock -->
+      <app-virtual-clock 
+        *ngIf="!isReplayMode"
+        [sessionId]="sessionId">
+      </app-virtual-clock>
+
+      <!-- ✨ Mode Replay : Contrôles COMPACTS -->
+      <div *ngIf="isReplayMode" class="replay-controls-compact">
+        <!-- Ligne 1: Temps + Contrôles de lecture -->
+        <div class="replay-main-row">
+          <div class="replay-time-compact">
+            🕐 {{ replayVirtualTime || '2023-01-01 09:30:00' }}
+          </div>
+          
+          <div class="playback-controls-compact">
+            <button class="ctrl-btn-compact" (click)="replayRewind()" title="Reculer 10min">⏪</button>
+            <button class="ctrl-btn-compact play" *ngIf="!replayIsPlaying" (click)="replayPlay()" title="Lecture">▶️</button>
+            <button class="ctrl-btn-compact pause" *ngIf="replayIsPlaying" (click)="replayPause()" title="Pause">⏸️</button>
+            <button class="ctrl-btn-compact stop" (click)="replayStop()" title="Arrêter">⏹️</button>
+            <button class="ctrl-btn-compact" (click)="replayForward()" title="Avancer 10min">⏩</button>
+          </div>
+
+          <!-- Indicateur vitesse actuelle -->
+          <div class="speed-indicator" [class.slow]="isSlowMotion()">
+            {{ getSpeedLabel(replayCurrentSpeed) }}
+          </div>
+        </div>
+        
+        <!-- Ligne 2: Vitesses (compacte) -->
+        <div class="speed-row-compact">
+          <span class="speed-section-label">🐌</span>
+          <button *ngFor="let s of [0.1, 0.25, 0.5]"
+                  class="speed-btn-compact slow"
+                  [class.active]="replayCurrentSpeed === s"
+                  (click)="replaySetSpeed(s)">
+            ×{{ s }}
+          </button>
+          
+          <span class="speed-divider">|</span>
+          
+          <button *ngFor="let s of [1, 10, 100, 1000, 2100]"
+                  class="speed-btn-compact"
+                  [class.active]="replayCurrentSpeed === s"
+                  [class.normal]="s === 1"
+                  [class.fast]="s > 1"
+                  (click)="replaySetSpeed(s)">
+            ×{{ s }}
+          </button>
+        </div>
+        
+        <!-- Barre de progression (fine) -->
+        <div class="progress-bar-compact">
+          <div class="progress-fill" [style.width.%]="replayProgress"></div>
+          <span class="progress-text-compact">{{ replayProgress | number:'1.0-0' }}%</span>
         </div>
       </div>
     </div>
@@ -47,7 +105,7 @@
     <h3>🎯 Marché</h3>
   </div>
   
-  <!-- ✅ NOUVEAU : Bandeau de catégories -->
+  <!-- Bandeau de catégories -->
   <div class="market-tabs">
     <button 
       class="tab" 

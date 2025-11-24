@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { TradingSessionService } from '../../services/trading-session.service';
 import { AuthService } from '../../services/auth.service';
 import { TradingSession, SessionStatus } from '../../models/trading-session.model';
+import { HttpClient } from '@angular/common/http';
+
 
 @Component({
   selector: 'app-lobby',
@@ -41,7 +43,8 @@ export class LobbyComponent implements OnInit {
   constructor(
     private sessionService: TradingSessionService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private http: HttpClient 
   ) {}
 
   ngOnInit(): void {
@@ -113,6 +116,50 @@ export class LobbyComponent implements OnInit {
       }
     });
   }
+
+   /**
+ * Rejoindre une session en mode Replay (salle de jeu)
+ */
+joinSessionReplay(session: TradingSession): void {
+  if (!session.id) return;
+
+  // 1) On s'assure que l'utilisateur rejoint bien la session
+  this.sessionService.joinSession(session.id, this.currentUser.id).subscribe({
+    next: () => {
+      console.log('✅ Session rejointe (Replay)');
+
+      // 2) On démarre le moteur de replay côté backend
+      const body = {
+        symbols: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META'],
+        mode: 'full'  // ou 'full' si tu veux la vraie année complète
+      };
+
+      this.http
+        .post(`http://localhost:9090/examen/api/replay/${session.id}/start-auto`, body)
+        .subscribe({
+          next: (response: any) => {
+            console.log('✅ Replay initialisé :', response);
+
+            // 3) On redirige vers la gaming room en mode replay
+            this.router.navigate(
+              ['/gamingroom', session.id],      // 👈 même route que ton mode live
+              { queryParams: { mode: 'replay' } }
+            );
+          },
+          error: (err) => {
+            console.error('❌ Erreur initialisation replay :', err);
+            alert('Impossible de démarrer le mode replay');
+          }
+        });
+    },
+    error: (error) => {
+      console.error('❌ Erreur :', error);
+      alert(error.error?.message || 'Impossible de rejoindre la session en replay');
+    }
+  });
+}
+
+
 
   /**
    * Rejoindre par code

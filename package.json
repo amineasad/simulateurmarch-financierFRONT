@@ -25,6 +25,7 @@
     "date-fns": "^2.30.0",
     "rxjs": "~7.8.0",
     "sockjs-client": "^1.6.1",
+    "stompjs": "^2.3.3",
     "tslib": "^2.3.0",
     "zone.js": "~0.13.0"
   },

@@ -1,3 +1,4 @@
+
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule } from '@angular/common/http';
@@ -36,6 +37,8 @@ import { EducationAdminComponent } from './components/education-admin/education-
 import { SafeUrlPipe } from './pipes/safe-url.pipe'; 
 //salledejeu
 import { SessionOrderBookComponent } from './components/session-order-book/session-order-book.component';
+import { VirtualClockComponent } from './components/virtual-clock/virtual-clock.component';
+
 
 
 @NgModule({
@@ -66,6 +69,8 @@ GamingRoomComponent,
      SafeUrlPipe,
      //salledejeu
      SessionOrderBookComponent,
+     VirtualClockComponent,
+    
     
     // ← Ajout
   ],

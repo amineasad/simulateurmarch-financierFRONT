@@ -1,9 +1,9 @@
 // src/app/components/gaming-room/gaming-room.component.ts
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription, interval, timer, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { TradingSessionService } from '../../services/trading-session.service';
+import { Subscription, interval } from 'rxjs';
+
+import { TradingSessionService, TimeScaleStats } from '../../services/trading-session.service';
 import { AuthService } from '../../services/auth.service';
 import {
   TradingSession,
@@ -18,7 +18,9 @@ import { MarketDataService, Quote } from '../../services/market-data.service';
 import { SessionOrderBookService } from '../../services/session-order-book.service';
 import { SessionOrderBookDepth } from '../../models/market.model';
 
-// ✅ NOUVEAU : Type pour les catégories
+// ✅ AJOUT REPLAY
+import { MarketReplayService, MarketTick, ReplayStats } from '../../services/market-replay.service';
+
 export type AssetCategory = 'STOCKS' | 'FOREX' | 'METALS' | 'ETFS';
 
 interface StockData {
@@ -49,53 +51,54 @@ type PositionRow = {
   styleUrls: ['./gaming-room.component.css']
 })
 export class GamingRoomComponent implements OnInit, OnDestroy {
-  // Enums
+  // Enums pour le template
   SessionStatus = SessionStatus;
   OrderSide = OrderSide;
   OrderType = OrderType;
 
-  // ✅ NOUVEAU : Catégories d'actifs
+  // ====== Catégories d'actifs ======
   selectedCategory: AssetCategory = 'STOCKS';
-  
-  // ✅ NOUVEAU : Symboles par catégorie
+
   private stockSymbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NVDA', 'PYPL', 'INTC', 'AMD'];
   private forexSymbols = ['EUR/USD', 'USD/JPY', 'GBP/USD', 'USD/CHF', 'AUD/USD', 'USD/CAD', 'NZD/USD', 'EUR/GBP'];
   private metalSymbols = ['XAU/USD', 'XAG/USD', 'XPT/USD', 'XPD/USD'];
   private etfSymbols = ['SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'VWO', 'EEM', 'GLD', 'SLV', 'TLT'];
 
-  // ✅ MODIFIÉ : Liste dynamique selon la catégorie
   symbols: string[] = [];
-  
-  // Session
+
+  // ====== Session & utilisateur ======
   sessionId!: number;
   session: TradingSession | null = null;
   currentUser: any;
   myParticipation: SessionParticipation | null = null;
 
-  // Timer
+  // ====== Timer (time scaling backend) ======
   timeRemaining = '--:--';
   sessionProgress = 0;
+  virtualMarketTime = '09:30';
+  tradingPhase = 'PRE_MARKET';
+  timeScaleFactor = 1.0;
+  isMarketOpen = false;
   private timerSub?: Subscription;
 
-  // Marché
+  // ====== Marché (données de prix) ======
   marketData: Record<string, StockData> = {};
   private quotesSub?: Subscription;
 
-  // Trading
+  // ====== Trading ======
   selectedSymbol = 'AAPL';
   orderType: OrderType = OrderType.MARKET;
   orderSide: OrderSide = OrderSide.BUY;
   orderQuantity = 10;
   orderPrice = 0;
 
-  // Feed d'activité
+  // ====== Feed d'activité ======
   activityFeed: ActivityItem[] = [];
 
-  // Carnet d'ordres
+  // ====== Carnet d'ordres ======
   depth?: SessionOrderBookDepth;
-  private depthStop$ = new Subject<void>();
 
-  // Mapping vers TradingView
+  // ====== Mapping vers TradingView ======
   private symbolMap: Record<string, string> = {
     'AAPL': 'NASDAQ:AAPL',
     'MSFT': 'NASDAQ:MSFT',
@@ -111,18 +114,40 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
     'XAU/USD': 'TVC:GOLD',
     'XAG/USD': 'TVC:SILVER'
   };
-  
+
   get tradingViewSymbol(): string {
     return this.symbolMap[this.selectedSymbol] || 'NASDAQ:AAPL';
   }
 
-  // Loading states
+  // ====== Loading / UI ======
   isPlacingOrder = false;
   lastOrderError = '';
 
-  // Positions (portfolio)
+  // ====== Positions ======
   myPositions: PositionRow[] = [];
   trackBySymbol = (_: number, p: PositionRow) => p.symbol;
+
+  // ====== ✅ REPLAY : état du mode replay avec RALENTI ======
+  isReplayMode = false;
+  replayProgress = 0;
+  replayVirtualTime = '';
+  replayIsPlaying = false;
+  replayCurrentSpeed = 1.0;
+  
+  // ✨ NOUVEAUX : Ralentis + Accélérations
+  availableSpeeds = [
+    { value: 0.1, label: '×0.1 (très lent)' },
+    { value: 0.25, label: '×0.25 (lent)' },
+    { value: 0.5, label: '×0.5 (ralenti)' },
+    { value: 1, label: '×1 (normal)' },
+    { value: 10, label: '×10' },
+    { value: 100, label: '×100' },
+    { value: 1000, label: '×1000' },
+    { value: 2100, label: '×2100 (max)' }
+  ];
+
+  private replayDataSub?: Subscription;
+  private replayStatsSub?: Subscription;
 
   constructor(
     private route: ActivatedRoute,
@@ -130,9 +155,11 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
     private sessionService: TradingSessionService,
     private authService: AuthService,
     private marketDataService: MarketDataService,
-    private sessionOrderBookService: SessionOrderBookService
+    private sessionOrderBookService: SessionOrderBookService,
+    private replayService: MarketReplayService
   ) {}
 
+  // ==================== CYCLE DE VIE ====================
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     if (!this.currentUser) {
@@ -140,7 +167,6 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // ✅ NOUVEAU : Charger la catégorie par défaut
     this.loadCategorySymbols('STOCKS');
 
     this.route.params.subscribe(params => {
@@ -148,56 +174,40 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
       this.loadSession();
     });
 
-    // Prix simulés
-    this.marketDataService.startPolling(this.symbols, 2000);
-    this.quotesSub = this.marketDataService.streamQuotes().subscribe(
-      (map: Record<string, Quote>) => {
-        for (const s of this.symbols) {
-          const q = map[s];
-          if (!q) continue;
-          this.marketData[s] = {
-            price: q.price,
-            change: q.change,
-            changePercent: q.changePercent
-          };
-        }
+    this.route.queryParams.subscribe(query => {
+      this.isReplayMode = query['mode'] === 'replay';
 
-        // Mettre à jour le prix du formulaire pour LIMIT
-        if (this.orderType === OrderType.LIMIT) {
-          const currentPrice = this.marketData[this.selectedSymbol]?.price;
-          if (currentPrice && this.orderPrice === 0) {
-            this.orderPrice = currentPrice;
-          }
-        }
-
-        // ✅ Recalcule live des PnL/valeurs des positions à chaque tick
-        this.recomputePositionsFromQuotes();
+      if (this.isReplayMode) {
+        this.initReplayMode();
+      } else {
+        this.initLiveMode();
       }
-    );
+    });
   }
 
   ngOnDestroy(): void {
     this.timerSub?.unsubscribe();
     this.quotesSub?.unsubscribe();
+    this.replayDataSub?.unsubscribe();
+    this.replayStatsSub?.unsubscribe();
+    this.replayService.disconnect();
     this.marketDataService.stopPolling();
-    this.depthStop$.next();
-    this.depthStop$.complete();
   }
 
-  // ====== NOUVEAU : Gestion des catégories ======
+  // ==================== CATÉGORIES D'ACTIFS ====================
   changeCategory(cat: AssetCategory): void {
     if (cat === this.selectedCategory) return;
-    
+
     this.selectedCategory = cat;
     this.loadCategorySymbols(cat);
-    
-    // Sélectionner le premier symbole de la nouvelle catégorie
+
     if (this.symbols.length > 0) {
       this.selectSymbol(this.symbols[0]);
     }
-    
-    // Redémarrer le polling avec les nouveaux symboles
-    this.marketDataService.startPolling(this.symbols, 2000);
+
+    if (!this.isReplayMode) {
+      this.marketDataService.startPolling(this.symbols, 2000);
+    }
   }
 
   private loadCategorySymbols(cat: AssetCategory): void {
@@ -215,10 +225,9 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
         this.symbols = [...this.etfSymbols];
         break;
     }
-    console.log(`✅ Catégorie ${cat} chargée:`, this.symbols.length, 'symboles');
   }
 
-  // ====== Session ======
+  // ==================== SESSION ====================
   loadSession(): void {
     this.sessionService.getSessionById(this.sessionId).subscribe({
       next: (s) => {
@@ -226,7 +235,6 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
         this.loadParticipation();
         this.loadPositions();
         this.startTimer();
-        this.startDepthPolling();
         this.loadRecentActivity();
       },
       error: (e) => {
@@ -241,12 +249,8 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
     this.sessionService
       .getParticipation(this.sessionId, this.currentUser.id)
       .subscribe({
-        next: (p) => {
-          this.myParticipation = p;
-        },
-        error: (e) => {
-          console.error('Erreur chargement participation', e);
-        }
+        next: (p) => { this.myParticipation = p; },
+        error: (e) => { console.error('Erreur chargement participation', e); }
       });
   }
 
@@ -271,7 +275,15 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
     const value = quantity * last;
     const pnl = (last - avgPrice) * quantity;
     const pnlPct = avgPrice > 0 ? ((last - avgPrice) / avgPrice) * 100 : 0;
-    return { symbol, quantity, avgPrice, lastPrice: last, marketValue: value, unrealizedPnL: pnl, unrealizedPnLPercent: pnlPct };
+    return {
+      symbol,
+      quantity,
+      avgPrice,
+      lastPrice: last,
+      marketValue: value,
+      unrealizedPnL: pnl,
+      unrealizedPnLPercent: pnlPct
+    };
   }
 
   private recomputePositionsFromQuotes(): void {
@@ -302,70 +314,244 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ====== Timer ======
+  // ==================== TIMER (TimeScaleManager) ====================
   private startTimer(): void {
-    this.timerSub = interval(1000).subscribe(() => this.updateTimer());
+    this.timerSub = interval(2000).subscribe(() => {
+      this.updateTimerWithTimeScale();
+    });
   }
 
-  private updateTimer(): void {
+  private updateTimerWithTimeScale(): void {
     if (!this.session) return;
 
-    const now = new Date();
-    const start = new Date(this.session.heureDebut);
-    const end = new Date(this.session.heureFin);
+    this.sessionService.getTimeStats(this.sessionId).subscribe({
+      next: (stats: TimeScaleStats) => {
+        this.virtualMarketTime = stats.virtualMarketTime || '09:30';
+        this.tradingPhase = stats.tradingPhase || 'PRE_MARKET';
+        this.isMarketOpen = stats.isMarketOpen;
+        this.timeScaleFactor = stats.timeScaleFactor;
+        this.sessionProgress = stats.progressPercentage * 100;
 
-    if (now < start) {
-      const ms = start.getTime() - now.getTime();
-      this.timeRemaining = `Démarre dans ${this.formatTime(ms)}`;
-      this.sessionProgress = 0;
-    } else if (now > end) {
-      this.timeRemaining = 'Terminée';
-      this.sessionProgress = 100;
+        const mins = stats.realMinutesRemaining;
+        if (mins > 60) {
+          const h = Math.floor(mins / 60);
+          const m = mins % 60;
+          this.timeRemaining = `${h}h ${m}min`;
+        } else {
+          this.timeRemaining = `${mins}min`;
+        }
+      },
+      error: (err) => {
+        console.error('Erreur récupération time stats', err);
+      }
+    });
+  }
+
+  // ==================== MODE LIVE ====================
+  private initLiveMode(): void {
+    console.log('🎮 Mode Live activé');
+
+    this.marketDataService.startPolling(this.symbols, 2000);
+    this.quotesSub = this.marketDataService.streamQuotes().subscribe(
+      (map: Record<string, Quote>) => {
+        for (const s of this.symbols) {
+          const q = map[s];
+          if (!q) continue;
+          this.marketData[s] = {
+            price: q.price,
+            change: q.change,
+            changePercent: q.changePercent
+          };
+        }
+
+        if (this.orderType === OrderType.LIMIT) {
+          const currentPrice = this.marketData[this.selectedSymbol]?.price;
+          if (currentPrice && this.orderPrice === 0) {
+            this.orderPrice = currentPrice;
+          }
+        }
+
+        this.recomputePositionsFromQuotes();
+      }
+    );
+  }
+
+  // ==================== MODE REPLAY ====================
+  private initReplayMode(): void {
+    console.log('📼 Mode Replay activé');
+
+    this.replayService.connectToSession(this.sessionId);
+
+    this.replayDataSub = this.replayService.getMarketData().subscribe(
+      (tick: MarketTick) => {
+        this.handleReplayTick(tick);
+      }
+    );
+
+    this.replayStatsSub = this.replayService.getReplayStats().subscribe(
+      (stats: ReplayStats) => {
+        this.replayProgress = stats.progress;
+        this.replayVirtualTime = stats.virtualTime;
+        this.replayIsPlaying = stats.isPlaying;
+        this.replayCurrentSpeed = stats.speedMultiplier;
+      }
+    );
+  }
+
+  private handleReplayTick(tick: MarketTick): void {
+    if (!this.marketData[tick.symbol]) {
+      this.marketData[tick.symbol] = {
+        price: 0,
+        change: 0,
+        changePercent: 0
+      };
+    }
+
+    const prevPrice = this.marketData[tick.symbol].price;
+    const newPrice = tick.close;
+
+    this.marketData[tick.symbol] = {
+      price: newPrice,
+      change: newPrice - prevPrice,
+      changePercent: prevPrice > 0 ? ((newPrice - prevPrice) / prevPrice) * 100 : 0
+    };
+
+    this.recomputePositionsFromQuotes();
+  }
+
+  // ==================== ✨ CONTRÔLES REPLAY AVEC RALENTI ====================
+  
+  replayPlay(): void {
+    this.replayIsPlaying = true;
+
+    this.replayService.play(this.sessionId).subscribe({
+      next: () => console.log('▶️ Replay play'),
+      error: (err) => {
+        console.error('❌ Erreur play:', err);
+        this.replayIsPlaying = false;
+      }
+    });
+  }
+
+  replayPause(): void {
+    this.replayIsPlaying = false;
+
+    this.replayService.pause(this.sessionId).subscribe({
+      next: () => console.log('⏸️ Replay pause'),
+      error: (err) => {
+        console.error('❌ Erreur pause:', err);
+        this.replayIsPlaying = true;
+      }
+    });
+  }
+
+  replayStop(): void {
+    this.replayService.stop(this.sessionId).subscribe({
+      next: () => console.log('⏹️ Replay stop'),
+      error: (err) => console.error('❌ Erreur stop:', err)
+    });
+  }
+
+  // ✨ NOUVEAU : Méthode améliorée pour gérer tous les types de vitesse
+  replaySetSpeed(speed: number): void {
+    // Validation locale
+    if (speed <= 0 || speed > 10000) {
+      console.warn('⚠️ Vitesse invalide:', speed);
+      return;
+    }
+
+    // Afficher un message approprié selon le type de vitesse
+    let speedLabel = '';
+    if (speed < 1) {
+      speedLabel = `🐌 Ralenti ×${speed}`;
+    } else if (speed === 1) {
+      speedLabel = '▶️ Vitesse normale';
     } else {
-      const remaining = end.getTime() - now.getTime();
-      const total = end.getTime() - start.getTime();
-      const elapsed = now.getTime() - start.getTime();
-      this.timeRemaining = this.formatTime(remaining);
-      this.sessionProgress = Math.min(100, (elapsed / total) * 100);
+      speedLabel = `⚡ Accéléré ×${speed}`;
+    }
+
+    console.log(`🎬 Changement de vitesse demandé: ${speedLabel}`);
+    console.log(`   Session ID: ${this.sessionId}`);
+    console.log(`   Vitesse actuelle: ×${this.replayCurrentSpeed}`);
+    console.log(`   Nouvelle vitesse: ×${speed}`);
+
+    this.replayService.setSpeed(this.sessionId, speed).subscribe({
+      next: (response) => {
+        console.log(`✅ ${speedLabel} - Réponse serveur:`, response);
+        
+        // ✅ Mettre à jour l'état local immédiatement
+        this.replayCurrentSpeed = speed;
+        
+        // Afficher un message dans l'interface
+        if (speed < 1) {
+          console.log(`⏱️ Les ticks arrivent maintenant ${1/speed}× plus lentement`);
+        } else if (speed > 1) {
+          console.log(`⚡ Les ticks arrivent maintenant ${speed}× plus vite`);
+        }
+      },
+      error: (err) => {
+        console.error('❌ Erreur changement vitesse:', err);
+        console.error('   Détails:', err.error);
+      }
+    });
+  }
+
+  replayRewind(): void {
+    this.replayService.rewind(this.sessionId, 10).subscribe({
+      next: () => console.log('⏪ Rewind 10min'),
+      error: (err) => console.error('❌ Erreur rewind:', err)
+    });
+  }
+
+  replayForward(): void {
+    this.replayService.forward(this.sessionId, 10).subscribe({
+      next: () => console.log('⏩ Forward 10min'),
+      error: (err) => console.error('❌ Erreur forward:', err)
+    });
+  }
+
+  // ✨ NOUVEAU : Helper pour vérifier si c'est un ralenti
+  isSlowMotion(): boolean {
+    return this.replayCurrentSpeed < 1;
+  }
+
+  // ✨ NOUVEAU : Helper pour obtenir le label de vitesse
+  getSpeedLabel(speed: number): string {
+    if (speed < 1) {
+      return `×${speed} 🐌`;
+    } else if (speed === 1) {
+      return '×1';
+    } else {
+      return `×${speed} ⚡`;
     }
   }
 
-  private formatTime(ms: number): string {
-    const m = Math.floor(ms / 60000);
-    const s = Math.floor((ms % 60000) / 1000);
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  }
-
-  // ====== Carnet d'ordres ======
-  private startDepthPolling(): void {
-    this.depthStop$.next();
-    if (!this.session) return;
-
-    timer(0, 1500)
-      .pipe(takeUntil(this.depthStop$))
-      .subscribe(() => {
-        this.sessionOrderBookService
-          .getDepth(this.sessionId, this.selectedSymbol, 10)
-          .subscribe({
-            next: (d) => { this.depth = d; },
-            error: (e) => { console.warn('Erreur carnet:', e); }
-          });
-      });
-  }
-
-  // ====== Trading ======
+  // ==================== CARNET D'ORDRES ====================
   selectSymbol(sym: string): void {
     this.selectedSymbol = sym;
-    this.marketDataService.trackSymbol(sym);
+
+    if (!this.isReplayMode) {
+      this.marketDataService.trackSymbol(sym);
+    }
 
     const currentPrice = this.marketData[sym]?.price ?? 0;
     if (this.orderType === OrderType.LIMIT) {
       this.orderPrice = currentPrice;
     }
 
-    this.startDepthPolling();
+    this.loadOrderBook();
   }
 
+  private loadOrderBook(): void {
+    this.sessionOrderBookService
+      .getDepth(this.sessionId, this.selectedSymbol, 10)
+      .subscribe({
+        next: (d) => { this.depth = d; },
+        error: (e) => { console.warn('Erreur carnet:', e); }
+      });
+  }
+
+  // ==================== ORDRES ====================
   onOrderTypeChange(): void {
     if (this.orderType === OrderType.LIMIT) {
       this.orderPrice = this.marketData[this.selectedSymbol]?.price ?? 100;
@@ -375,7 +561,7 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
   }
 
   canTrade(): boolean {
-    return true;
+    return this.session?.status === SessionStatus.OPEN && this.isMarketOpen;
   }
 
   getEstimatedTotal(): number {
@@ -433,17 +619,18 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
         const executionPrice = saved?.executionPrice ?? price;
         this.activityFeed.unshift({
           text: `${this.orderSide === OrderSide.BUY ? '🟢 Achat' : '🔴 Vente'} ${order.quantity} ${order.symbol} @ ${executionPrice.toFixed(2)}€`,
-          time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          time: new Date().toLocaleTimeString('fr-FR', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          }),
           type: this.orderSide === OrderSide.BUY ? 'buy' : 'sell'
         });
         this.activityFeed = this.activityFeed.slice(0, 20);
 
         this.loadParticipation();
         this.loadPositions();
-
-        this.sessionOrderBookService
-          .getDepth(this.sessionId, this.selectedSymbol, 10)
-          .subscribe({ next: (d) => { this.depth = d; } });
+        this.loadOrderBook();
 
         if (saved.status === OrderStatus.EXECUTED) {
           this.showSuccessMessage('✅ Ordre exécuté avec succès !');
@@ -465,7 +652,7 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
     console.log(msg);
   }
 
-  // Helpers pour le template
+  // ==================== HELPERS UI ====================
   getStatusColor(): string {
     if (!this.session) return 'gray';
     switch (this.session.status) {
@@ -488,13 +675,14 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Portfolio totals
   getPortfolioValue(): number {
     return this.myPositions.reduce((sum, p) => sum + p.marketValue, 0);
   }
+
   getPortfolioPnL(): number {
     return this.myPositions.reduce((sum, p) => sum + p.unrealizedPnL, 0);
   }
+
   getPortfolioPnLPercent(): number {
     const invested = this.myPositions.reduce((sum, p) => sum + p.avgPrice * p.quantity, 0);
     if (invested <= 0) return 0;

@@ -403,3 +403,48 @@
     grid-template-columns: 1fr;
   }
 }
+/* === Boutons Mode Live / Mode Replay === */
+.btn-primary,
+.btn-secondary {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+/* 🎮 Mode Live = btn-primary */
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #1e40af);
+  color: #e2e8f0;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.45);
+}
+
+/* 📼 Mode Replay = btn-secondary */
+.btn-secondary {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  color: #f3e8ff;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(139, 92, 246, 0.45);
+}
+
+/* Pour qu'ils prennent toute la largeur dans .card-actions */
+.card-actions .btn-primary,
+.card-actions .btn-secondary {
+  flex: 1;
+  text-align: center;
+}

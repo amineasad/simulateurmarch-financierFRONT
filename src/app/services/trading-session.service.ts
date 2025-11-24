@@ -5,6 +5,29 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { TradingSession, SessionParticipation, MarketEvent, SessionOrder } from '../models/trading-session.model';
 
+// ✅ NOUVEAUX TYPES pour le Time Scaling
+export interface VirtualClockResponse {
+  virtualTime: string;           // "10:45:30"
+  phase: string;                 // "OPENING"
+  phaseDescription: string;      // "Ouverture (volatilité haute)"
+  isMarketOpen: boolean;
+  progressPercentage: number;    // 0.32 (32%)
+  realMinutesRemaining: number;  // 45 minutes réelles
+  timeScaleFactor: number;       // 6.5
+}
+
+export interface TimeScaleStats {
+  virtualMarketTime: string;
+  tradingPhase: string;
+  progressPercentage: number;
+  realMinutesElapsed: number;
+  realMinutesRemaining: number;
+  timeScaleFactor: number;
+  isMarketOpen: boolean;
+  formattedProgress?: string;
+  virtualTimeFormatted?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -120,17 +143,16 @@ export class TradingSessionService {
   // ==================== ÉVÉNEMENTS ====================
 
   createEvent(event: any): Observable<MarketEvent> {
-  return this.http.post<MarketEvent>(`${this.API_URL}/events`, event);
-}
-
+    return this.http.post<MarketEvent>(`${this.API_URL}/events`, event);
+  }
 
   getSessionEvents(sessionId: number): Observable<MarketEvent[]> {
     return this.http.get<MarketEvent[]>(`${this.API_URL}/events/session/${sessionId}`);
   }
 
-triggerEvent(eventId: number): Observable<void> {
-  return this.http.post<void>(`${this.API_URL}/events/${eventId}/trigger`, {});
-}
+  triggerEvent(eventId: number): Observable<void> {
+    return this.http.post<void>(`${this.API_URL}/events/${eventId}/trigger`, {});
+  }
 
   checkScheduledEvents(sessionId: number): Observable<MarketEvent[]> {
     return this.http.post<MarketEvent[]>(`${this.API_URL}/events/session/${sessionId}/check-scheduled`, {});
@@ -165,8 +187,28 @@ triggerEvent(eventId: number): Observable<void> {
   getTotalVolume(sessionId: number): Observable<number> {
     return this.http.get<number>(`${this.API_URL}/orders/session/${sessionId}/volume`);
   }
-   getPositions(sessionId: number, userId: number) {
-    // endpoint backend ajouté ci-dessous
+
+  getPositions(sessionId: number, userId: number) {
     return this.http.get<any[]>(`${this.API_URL}/positions/session/${sessionId}/user/${userId}`);
+  }
+
+  // ==================== ✅ TIME SCALING (NOUVEAUX ENDPOINTS) ====================
+
+  /**
+   * Récupère l'horloge virtuelle de la session
+   */
+  getVirtualClock(sessionId: number): Observable<VirtualClockResponse> {
+    return this.http.get<VirtualClockResponse>(
+      `${this.API_URL}/sessions/${sessionId}/time/virtual-clock`
+    );
+  }
+
+  /**
+   * Récupère les statistiques complètes du time scaling
+   */
+  getTimeStats(sessionId: number): Observable<TimeScaleStats> {
+    return this.http.get<TimeScaleStats>(
+      `${this.API_URL}/sessions/${sessionId}/time/stats`
+    );
   }
 }
