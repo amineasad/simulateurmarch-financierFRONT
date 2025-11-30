@@ -376,48 +376,111 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
     );
   }
 
-  // ==================== MODE REPLAY ====================
-  private initReplayMode(): void {
-    console.log('📼 Mode Replay activé');
+ // ========================================
+// MODIFIER initReplayMode() existant
+// ========================================
 
-    this.replayService.connectToSession(this.sessionId);
+private initReplayMode(): void {
+  console.log('📼 Mode Replay activé');
 
-    this.replayDataSub = this.replayService.getMarketData().subscribe(
-      (tick: MarketTick) => {
-        this.handleReplayTick(tick);
-      }
-    );
+  this.replayService.connectToSession(this.sessionId);
 
-    this.replayStatsSub = this.replayService.getReplayStats().subscribe(
-      (stats: ReplayStats) => {
-        this.replayProgress = stats.progress;
-        this.replayVirtualTime = stats.virtualTime;
-        this.replayIsPlaying = stats.isPlaying;
-        this.replayCurrentSpeed = stats.speedMultiplier;
-      }
-    );
-  }
-
-  private handleReplayTick(tick: MarketTick): void {
-    if (!this.marketData[tick.symbol]) {
-      this.marketData[tick.symbol] = {
-        price: 0,
-        change: 0,
-        changePercent: 0
-      };
+  this.replayDataSub = this.replayService.getMarketData().subscribe(
+    (tick: MarketTick) => {
+      this.handleReplayTick(tick);
     }
+  );
 
-    const prevPrice = this.marketData[tick.symbol].price;
-    const newPrice = tick.close;
+  this.replayStatsSub = this.replayService.getReplayStats().subscribe(
+    (stats: ReplayStats) => {
+      this.replayProgress = stats.progress;
+      this.replayVirtualTime = stats.virtualTime;
+      this.replayIsPlaying = stats.isPlaying;
+      this.replayCurrentSpeed = stats.speedMultiplier;
+    }
+  );
+  
+   // ✨ NOUVEAU : Générer le carnet initial si prix déjà disponible
+  setTimeout(() => {
+    const currentPrice = this.marketData[this.selectedSymbol]?.price;
+    if (currentPrice && currentPrice > 0) {
+      this.generateSyntheticOrderBook(this.selectedSymbol, currentPrice);
+    }
+  }, 1000);
+}
 
+ // ========================================
+// MODIFIER handleReplayTick() existant
+// ========================================
+
+private handleReplayTick(tick: MarketTick): void {
+  if (!this.marketData[tick.symbol]) {
     this.marketData[tick.symbol] = {
-      price: newPrice,
-      change: newPrice - prevPrice,
-      changePercent: prevPrice > 0 ? ((newPrice - prevPrice) / prevPrice) * 100 : 0
+      price: 0,
+      change: 0,
+      changePercent: 0
     };
-
-    this.recomputePositionsFromQuotes();
   }
+
+  const prevPrice = this.marketData[tick.symbol].price;
+  const newPrice = tick.close;
+
+  this.marketData[tick.symbol] = {
+    price: newPrice,
+    change: newPrice - prevPrice,
+    changePercent: prevPrice > 0 ? ((newPrice - prevPrice) / prevPrice) * 100 : 0
+  };
+
+  this.recomputePositionsFromQuotes();
+
+  // ✨ NOUVEAU : Regénérer le carnet pour le symbole sélectionné
+  if (tick.symbol === this.selectedSymbol && newPrice > 0) {
+    this.generateSyntheticOrderBook(tick.symbol, newPrice);
+  }
+}
+  private generateSyntheticOrderBook(symbol: string, currentPrice: number): void {
+  if (currentPrice <= 0) return;
+
+  const bids: { price: number; quantity: number }[] = [];
+  const asks: { price: number; quantity: number }[] = [];
+
+  // ✨ Paramètres de génération (ajustables)
+  const LEVELS = 10;           // Nombre de niveaux de prix
+  const SPREAD_PERCENT = 0.1;  // Écart bid-ask en %
+  const MAX_QTY = 500;         // Quantité max par niveau
+
+  const spreadAmount = currentPrice * (SPREAD_PERCENT / 100);
+  const bestBid = currentPrice - spreadAmount;
+  const bestAsk = currentPrice + spreadAmount;
+
+  // 📗 BIDS (décroissants depuis bestBid)
+  for (let i = 0; i < LEVELS; i++) {
+    const tickSize = currentPrice < 100 ? 0.01 : 0.1;
+    const price = bestBid - (i * tickSize);
+    
+    // Quantités décroissantes (plus on s'éloigne, moins de volume)
+    const quantity = Math.floor(MAX_QTY * (1 - i * 0.08)) + Math.floor(Math.random() * 50);
+    
+    bids.push({ price: Math.max(0.01, price), quantity });
+  }
+
+  // 📕 ASKS (croissants depuis bestAsk)
+  for (let i = 0; i < LEVELS; i++) {
+    const tickSize = currentPrice < 100 ? 0.01 : 0.1;
+    const price = bestAsk + (i * tickSize);
+    
+    const quantity = Math.floor(MAX_QTY * (1 - i * 0.08)) + Math.floor(Math.random() * 50);
+    
+    asks.push({ price, quantity });
+  }
+
+  // ✅ Mettre à jour le carnet
+  this.depth = {
+    bids,
+    asks,
+    lastPrice: currentPrice
+  };
+}
 
   // ==================== ✨ CONTRÔLES REPLAY AVEC RALENTI ====================
   
@@ -527,20 +590,32 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
   }
 
   // ==================== CARNET D'ORDRES ====================
-  selectSymbol(sym: string): void {
-    this.selectedSymbol = sym;
+ // ========================================
+// MODIFIER selectSymbol() existant
+// ========================================
 
-    if (!this.isReplayMode) {
-      this.marketDataService.trackSymbol(sym);
-    }
+selectSymbol(sym: string): void {
+  this.selectedSymbol = sym;
 
+  if (!this.isReplayMode) {
+    this.marketDataService.trackSymbol(sym);
+    this.loadOrderBook(); // ✅ REST API en mode Live
+  } else {
+    // ✨ NOUVEAU : Carnet synthétique en mode Replay
     const currentPrice = this.marketData[sym]?.price ?? 0;
-    if (this.orderType === OrderType.LIMIT) {
-      this.orderPrice = currentPrice;
+    if (currentPrice > 0) {
+      this.generateSyntheticOrderBook(sym, currentPrice);
+    } else {
+      // Prix pas encore reçu, on attend le prochain tick
+      this.depth = { bids: [], asks: [], lastPrice: 0 };
     }
-
-    this.loadOrderBook();
   }
+
+  const currentPrice = this.marketData[sym]?.price ?? 0;
+  if (this.orderType === OrderType.LIMIT) {
+    this.orderPrice = currentPrice;
+  }
+}
 
   private loadOrderBook(): void {
     this.sessionOrderBookService
