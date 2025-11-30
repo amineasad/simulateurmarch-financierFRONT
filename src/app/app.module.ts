@@ -34,6 +34,7 @@ import { NewsMarketComponent } from './components/news-market/news-market.compon
 import { PriceDisplayComponent } from './components/price-display/price-display.component';
 import { EducationComponent } from './components/education/education.component';
 import { EducationAdminComponent } from './components/education-admin/education-admin.component';
+import { ForumComponent } from './components/forum/forum.component';
 import { SafeUrlPipe } from './pipes/safe-url.pipe'; 
 //salledejeu
 import { SessionOrderBookComponent } from './components/session-order-book/session-order-book.component';
@@ -65,6 +66,7 @@ GamingRoomComponent,
     PriceDisplayComponent,
     EducationComponent,
     EducationAdminComponent,
+    ForumComponent,
     NewsMarketComponent,
      SafeUrlPipe,
      //salledejeu

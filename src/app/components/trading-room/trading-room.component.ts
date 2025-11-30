@@ -522,4 +522,7 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
   goToEducation(): void {
     this.router.navigate(['/education']);
   }
+  goToForum(): void {
+    this.router.navigate(['/forum']);
+  }
 }
