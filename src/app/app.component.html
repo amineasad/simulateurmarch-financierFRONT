@@ -1,0 +1,137 @@
+<!-- src/app/app.component.html → VERSION FINALE ULTIME (FONCTIONNELLE À 100%) -->
+<div class="forum-global-container">
+
+  <!-- Header du forum -->
+  <div class="forum-header">
+    <h1 class="forum-title">Forum Trading Global</h1>
+    <p class="forum-subtitle">Partagez vos idées avec la communauté</p>
+  </div>
+
+  <!-- Boutons utilitaires -->
+  <div class="utility-buttons">
+    <button class="btn-action" (click)="toggleDarkMode()">
+      {{ isDarkMode ? 'Mode Clair' : 'Mode Sombre' }}
+    </button>
+    <button class="btn-action refresh-btn" (click)="loadPosts()">
+      Actualiser le forum
+    </button>
+  </div>
+
+  <!-- Formulaire de création de post -->
+  <div class="post-creation-card">
+    <textarea 
+      [(ngModel)]="newPostContent" 
+      placeholder="Partage ton trade, ton analyse ou pose une question..." 
+      class="post-textarea"
+      rows="3">
+    </textarea>
+
+    <!-- Prévisualisation de l'image sélectionnée -->
+    <div class="image-preview" *ngIf="previewImage">
+      <img [src]="previewImage" alt="Prévisualisation">
+      <button class="remove-image" (click)="removeImage()" title="Supprimer">×</button>
+    </div>
+
+    <!-- Actions : upload + publier -->
+    <div class="post-actions">
+      <label class="btn-photo-upload" title="Joindre une image">
+        <input type="file" accept="image/*" (change)="onFileSelected($event)" hidden>
+        <span>Photo</span>
+      </label>
+
+      <button 
+        class="btn-action btn-post" 
+        (click)="publishPost()"
+        [disabled]="!newPostContent.trim() && !selectedFile">
+        Publier
+      </button>
+    </div>
+  </div>
+
+  <!-- Liste des posts -->
+  <div class="posts-list">
+    <div *ngFor="let post of posts" class="post-card">
+
+      <!-- Auteur + date -->
+      <div class="post-author">
+        <img [src]="getAvatar(post)" class="author-avatar" alt="Avatar">
+        <div>
+          <strong>{{ post.authorFullName || 'Utilisateur' }}</strong>
+          <div class="post-date">{{ post.createdAt | date:'dd MMM yyyy à HH:mm' }}</div>
+        </div>
+      </div>
+
+      <!-- Contenu texte -->
+      <div class="post-content" [innerHTML]="post.content | newlineToBr"></div>
+
+      <!-- IMAGE DU POST (seulement si elle existe) -->
+      <div class="post-image-container" *ngIf="post.imagePath">
+        <img 
+          [src]="'http://localhost:9090' + post.imagePath" 
+          alt="Image du post" 
+          class="post-image"
+          (error)="onImageError($event)" />
+      </div>
+
+      <!-- Actions Like & Commentaire -->
+      <div class="post-footer">
+        <button 
+          class="action-btn like-btn" 
+          [class.liked]="post.userLiked" 
+          (click)="like(post)">
+          Like {{ post.likeCount || 0 }}
+        </button>
+        <button 
+          class="action-btn comment-btn" 
+          (click)="toggleComments(post)">
+          Commentaires {{ post.comments?.length || 0 }}
+        </button>
+      </div>
+
+      <!-- Section commentaires -->
+      <div class="comments-section" *ngIf="post.showComments">
+        
+        <!-- Liste des commentaires -->
+        <div *ngFor="let comment of post.comments" class="comment-item">
+          <img [src]="getAvatar(comment)" class="comment-avatar" alt="Avatar">
+          <div class="comment-body">
+            <strong>{{ comment.authorFullName || 'Utilisateur' }}</strong>
+            <p>{{ comment.content }}</p>
+            <small>{{ comment.createdAt | date:'HH:mm' }}</small>
+          </div>
+        </div>
+
+        <!-- Indicateur de frappe -->
+        <div class="typing-indicator" *ngIf="post.isTyping">
+          <div class="typing-bubble">
+            <span></span><span></span><span></span>
+          </div>
+          <small>
+            {{ typingNames[Math.floor(Math.random() * typingNames.length)] }} est en train d'écrire...
+          </small>
+        </div>
+
+        <!-- Nouveau commentaire -->
+        <div class="new-comment">
+          <input 
+            [(ngModel)]="post.newComment" 
+            (input)="onCommentInput(post)"
+            placeholder="Écris un commentaire..." 
+            class="comment-input"
+            (keyup.enter)="sendComment(post)">
+          <button 
+            class="btn-send-comment" 
+            (click)="sendComment(post)" 
+            [disabled]="!post.newComment?.trim()">
+            Envoyer
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- État vide -->
+    <div class="empty-state" *ngIf="posts.length === 0">
+      <p>Aucun message pour le moment<br>Sois le premier à écrire !</p>
+    </div>
+  </div>
+</div>

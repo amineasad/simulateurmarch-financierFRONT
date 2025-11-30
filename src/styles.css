@@ -1,0 +1,51 @@
+
+.boxed {
+    border-radius: 3px;
+    border: 1px solid #2a6496;
+    padding: 5px;
+    margin-bottom: 5px;
+}
+
+
+
+.clickable {
+  cursor: pointer;
+}
+/* ===== MODE SOMBRE ULTRA-PRO — FONCTIONNE À 100% ===== */
+html.dark-mode {
+  background: #0f0f0f;
+  color: #e0e0e0;
+}
+
+html.dark-mode .forum-global-container,
+html.dark-mode .post-card,
+html.dark-mode .post-creation-card {
+  background: #1a1a1a !important;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.7) !important;
+  border: 1px solid #333;
+}
+
+html.dark-mode .forum-header {
+  background: linear-gradient(135deg, #16213e, #1a1a2e) !important;
+}
+
+html.dark-mode input,
+html.dark-mode textarea {
+  background: #333 !important;
+  color: #fff !important;
+  border: 1px solid #555 !important;
+}
+
+html.dark-mode .btn-action,
+html.dark-mode button {
+  background: #667eea !important;
+}
+
+html.dark-mode .post-author strong,
+html.dark-mode .comment-body strong {
+  color: #a78bfa;
+}
+
+html.dark-mode .badge-new {
+  background: #ff6b6b !important;
+}

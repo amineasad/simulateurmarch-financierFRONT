@@ -1,0 +1,24 @@
+{
+  "/api": {
+    "target": "http://localhost:9090",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api": "/forum/api"
+    }
+  },
+  "/uploads": {
+    "target": "http://localhost:9090",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/ws": {
+    "target": "http://localhost:9090",
+    "secure": false,
+    "ws": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/ws": "/forum/ws"
+    }
+  }
+}
