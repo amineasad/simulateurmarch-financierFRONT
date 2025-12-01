@@ -5,6 +5,9 @@ import { Subscription, interval } from 'rxjs';
 
 import { TradingSessionService, TimeScaleStats } from '../../services/trading-session.service';
 import { AuthService } from '../../services/auth.service';
+import { PortfolioService } from '../../services/portfolio.service';
+import { AllocationRequest, AllocationResult } from '../../models/allocation.models';
+
 import {
   TradingSession,
   SessionParticipation,
@@ -97,6 +100,14 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
 
   // ====== Carnet d'ordres ======
   depth?: SessionOrderBookDepth;
+  allocationResult: AllocationResult | null = null;
+isAllocating = false;
+
+// Capital par défaut (tu peux changer)
+allocationCapital = 10000;
+
+// Stratégie par défaut
+allocationStrategy: 'MAX_RETURN' | 'LOW_VOL' = 'MAX_RETURN';
 
   // ====== Mapping vers TradingView ======
   private symbolMap: Record<string, string> = {
@@ -156,6 +167,7 @@ export class GamingRoomComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private marketDataService: MarketDataService,
     private sessionOrderBookService: SessionOrderBookService,
+    private portfolioService: PortfolioService, 
     private replayService: MarketReplayService
   ) {}
 
@@ -625,6 +637,49 @@ selectSymbol(sym: string): void {
         error: (e) => { console.warn('Erreur carnet:', e); }
       });
   }
+  private getActiveSymbols(): string[] {
+  // Pour l’instant on prend tous les symboles de la catégorie sélectionnée
+  return this.symbols;
+}
+allocatePortfolio(): void {
+  // 1️⃣ Vérifier qu'on a une session et des symboles
+  if (!this.sessionId) {
+    alert("Aucune session en cours.");
+    return;
+  }
+
+  const symbols = this.getActiveSymbols();
+  if (!symbols || symbols.length === 0) {
+    alert("Aucun symbole disponible pour l'allocation.");
+    return;
+  }
+
+  // 2️⃣ Construire la requête
+  const request: AllocationRequest = {
+    sessionId: this.sessionId,
+    totalCapital: this.allocationCapital,
+    symbols: symbols,
+    strategy: this.allocationStrategy
+  };
+
+  // 3️⃣ Appel API
+  this.isAllocating = true;
+
+  this.portfolioService.allocate(request).subscribe({
+    next: (res) => {
+      console.log("✅ Allocation reçue :", res);
+      this.allocationResult = res;
+      this.isAllocating = false;
+      // Ici plus tard on pourra appliquer l’allocation au portefeuille du joueur
+    },
+    error: (err) => {
+      console.error("❌ Erreur allocation :", err);
+      this.isAllocating = false;
+      alert("Erreur lors du calcul d'allocation.");
+    }
+  });
+}
+
 
   // ==================== ORDRES ====================
   onOrderTypeChange(): void {
@@ -763,4 +818,5 @@ selectSymbol(sym: string): void {
     if (invested <= 0) return 0;
     return (this.getPortfolioPnL() / invested) * 100;
   }
+  
 }

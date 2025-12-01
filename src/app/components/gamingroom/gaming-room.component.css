@@ -4,13 +4,15 @@
 
 /* ========== BASE ========== */
 .gaming-room {
-  height: 100vh;
+  min-height: 100vh;      /* la page peut devenir plus grande que l'écran */
   display: flex;
   flex-direction: column;
   background: #0a0e1a;
   color: #e2e8f0;
-  overflow: hidden;
+  overflow-y: auto;        /* ✅ scroll vertical autorisé */
+  overflow-x: hidden;      /* on garde l’horizontal caché */
 }
+
 
 /* ========== TOP BAR - COMPACTE ========== */
 .top-bar {
@@ -354,9 +356,10 @@
   grid-template-columns: 250px 1fr 340px;
   gap: 12px;
   padding: 12px;
-  overflow: hidden;
+  overflow: visible;   /* ✅ laisse le contenu grandir */
   min-height: 0;
 }
+
 
 .main-content > * {
   min-height: 0;
@@ -876,4 +879,121 @@
   .chart-panel {
     min-height: 350px;
   }
+}
+/* ========== ALLOCATION PANEL ========== */
+.allocation-panel {
+  flex: 0 0 auto;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.allocation-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.allocation-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.allocation-field label {
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.allocation-submit {
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.allocation-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(99, 102, 241, 0.3);
+}
+
+.allocation-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.allocation-result {
+  padding: 12px 14px;
+  border-top: 1px solid #334155;
+}
+
+.allocation-result h4 {
+  margin: 0 0 10px 0;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.allocation-comment {
+  padding: 8px;
+  background: rgba(99, 102, 241, 0.1);
+  border-left: 3px solid #6366f1;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  color: #a5b4fc;
+  font-size: 0.7rem;
+  font-style: italic;
+}
+
+.allocation-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.allocation-table th {
+  background: rgba(30, 41, 59, 0.5);
+  padding: 6px 4px;
+  text-align: left;
+  font-size: 0.65rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.allocation-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.symbol-cell { font-weight: 700; color: #60a5fa; }
+.weight-cell { text-align: right; }
+.amount-cell { text-align: right; }
+.return-cell { text-align: right; }
+.vol-cell { text-align: right; color: #94a3b8; }
+
+.return-cell.positive { color: #22c55e; }
+
+.allocation-totals {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 0.8rem;
+}
+
+.total-row strong {
+  color: #22c55e;
+  font-size: 0.9rem;
 }
