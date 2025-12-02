@@ -1094,3 +1094,54 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
+/* ===== NAVBAR PRO ===== */
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.navbar-logo {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 25px;
+}
+
+.navbar-links a {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  text-decoration: none;
+  padding: 6px 10px;
+  position: relative;
+  transition: color 0.25s ease;
+}
+
+/* Effet hover souligné moderne */
+.navbar-links a::after {
+  content: "";
+  display: block;
+  width: 0;
+  height: 2px;
+  background: #3b82f6;
+  margin: auto;
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.navbar-links a:hover {
+  color: #ffffff;
+}
+
+.navbar-links a:hover::after {
+  width: 100%;
+}
+

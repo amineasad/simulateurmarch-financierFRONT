@@ -3,23 +3,16 @@
 <div class="trading-room">
   <!-- TOP BAR -->
   <div class="top-bar">
-    <div class="top-bar-left">
-      <div class="logo">TRADIX</div>
-      <button class="btn-back" (click)="goToLobby()">
-        🎮 à la salle de jeu
-      </button>
-      <button class="btn-back" (click)="goToDetails()">
-        ℹ️ infos
-      </button>
-      <div class="info-item">
-        <button class="btn-back" (click)="goToEducation()">
-          🎓 s'apprentir
-        </button>
-         <button class="btn-back" (click)="goToForum()">
-          🎓 Forum
-        </button>
-      </div>
-    </div>
+    <div class="navbar-left">
+  <div class="navbar-logo">📈 TRADIX</div>
+
+  <nav class="navbar-links">
+    <a (click)="goToLobby()">🎮 Salle de jeu</a>
+    <a (click)="goToDetails()">ℹ️ Infos</a>
+    <a (click)="goToEducation()">🎓 Apprendre</a>
+    <a (click)="goToForum()">💬 Forum</a>
+  </nav>
+</div>
     
     <div class="top-bar-right">
       <div class="time-info">
