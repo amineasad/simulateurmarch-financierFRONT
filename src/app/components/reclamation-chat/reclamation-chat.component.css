@@ -1,0 +1,95 @@
+/* Bulle flottante */
+.chat-bubble {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  width: 65px;
+  height: 65px;
+  background: #007bff;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 30px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  transition: transform .2s;
+}
+.chat-bubble:hover {
+  transform: scale(1.1);
+}
+
+/* Fenêtre */
+.chat-window {
+  position: fixed;
+  bottom: 100px;
+  right: 25px;
+  width: 350px;
+  height: 400px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+/* Bouton fermer */
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* Messages */
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  font-size: 14px;
+  color: #222;
+}
+
+/* Réponse IA */
+.ia-response {
+  background: #e7f1ff;
+  padding: 8px;
+  border-radius: 8px;
+  margin-top: 8px;
+  white-space: pre-line;
+}
+
+/* Saisie */
+textarea {
+  width: 100%;
+  height: 90px;
+  border-radius: 8px;
+  border: 1px solid #bbb;
+  padding: 6px;
+  resize: none;
+  margin-top: 10px;
+}
+
+/* Bouton envoyer */
+.send-btn {
+  margin-top: 8px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.send-btn:disabled {
+  opacity: 0.5;
+}

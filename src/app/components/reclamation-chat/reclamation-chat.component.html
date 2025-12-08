@@ -1,0 +1,28 @@
+<!-- Bulle flottante -->
+<div class="chat-bubble" (click)="toggleChat()">
+  💬
+</div>
+
+<!-- Fenêtre du chat -->
+<div class="chat-window" *ngIf="isOpen">
+  <div class="header">
+    Agent Réclamations
+    <button class="close-btn" (click)="toggleChat()">✖</button>
+  </div>
+
+  <div class="messages">
+    <div *ngIf="loading" class="loading">⏳ Analyse en cours...</div>
+
+    <div *ngIf="response">
+      <p><strong>Sentiment :</strong> {{ response.sentiment?.sentiment }}</p>
+      <p><strong>Urgence :</strong> {{ response.sentiment?.urgence }}</p>
+      <p><strong>Catégorie :</strong> {{ response.categorie?.categorie }}</p>
+
+      <p><strong>Réponse Agent :</strong></p>
+      <p class="ia-response">{{ response.reponse }}</p>
+    </div>
+  </div>
+
+  <textarea [(ngModel)]="message" placeholder="Décrivez votre problème..."></textarea>
+  <button class="send-btn" (click)="envoyer()" [disabled]="loading">Envoyer</button>
+</div>

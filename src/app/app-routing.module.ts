@@ -39,6 +39,7 @@ import { NewsMarketComponent } from './components/news-market/news-market.compon
 import { EducationComponent } from './components/education/education.component';
 import { EducationAdminComponent } from './components/education-admin/education-admin.component';
 import { ForumComponent } from './components/forum/forum.component';
+import { ReclamationComponent } from './components/reclamation/reclamation.component';
 
 // Guard (si vous en avez un)
 // import { AuthGuard } from './guards/auth.guard';
@@ -81,7 +82,11 @@ const routes: Routes = [
    // Education
   { path: 'education', component: EducationComponent },
   { path: 'education/admin', component: EducationAdminComponent },
+  //forum
   { path: 'forum', component: ForumComponent },
+  //ia
+  { path: 'reclamation', component: ReclamationComponent },
+
   
   // ✅ Redirection par défaut vers Landing Page
   { path: '**', redirectTo: '', pathMatch: 'full' }
