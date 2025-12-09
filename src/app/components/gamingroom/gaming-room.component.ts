@@ -7,6 +7,9 @@ import { TradingSessionService, TimeScaleStats } from '../../services/trading-se
 import { AuthService } from '../../services/auth.service';
 import { PortfolioService } from '../../services/portfolio.service';
 import { AllocationRequest, AllocationResult } from '../../models/allocation.models';
+import { PatternAIService } from '../../services/pattern-ai.service';
+import { TraderAnalysisService } from '../../services/trader-analysis.service';
+
 
 import {
   TradingSession,
@@ -108,6 +111,12 @@ allocationCapital = 10000;
 
 // Stratégie par défaut
 allocationStrategy: 'MAX_RETURN' | 'LOW_VOL' = 'MAX_RETURN';
+//patterns
+aiSignal: string | null = null;
+aiConfidence: number | null = null;
+aiRecommendations: string[] = [];
+aiLoading = false;
+aiStrategies: any[] = [];
 
   // ====== Mapping vers TradingView ======
   private symbolMap: Record<string, string> = {
@@ -168,7 +177,9 @@ allocationStrategy: 'MAX_RETURN' | 'LOW_VOL' = 'MAX_RETURN';
     private marketDataService: MarketDataService,
     private sessionOrderBookService: SessionOrderBookService,
     private portfolioService: PortfolioService, 
-    private replayService: MarketReplayService
+    private patternAI: PatternAIService,
+    private traderAnalysis: TraderAnalysisService,// 👈 ajout ici
+    private replayService: MarketReplayService,
   ) {}
 
   // ==================== CYCLE DE VIE ====================
@@ -184,6 +195,8 @@ allocationStrategy: 'MAX_RETURN' | 'LOW_VOL' = 'MAX_RETURN';
     this.route.params.subscribe(params => {
       this.sessionId = +params['id'];
       this.loadSession();
+      this.loadTraderAnalysis();
+
     });
 
     this.route.queryParams.subscribe(query => {
@@ -608,6 +621,9 @@ private handleReplayTick(tick: MarketTick): void {
 
 selectSymbol(sym: string): void {
   this.selectedSymbol = sym;
+  // 🔥 Appel IA immédiat
+  this.fetchAISignal(sym);
+
 
   if (!this.isReplayMode) {
     this.marketDataService.trackSymbol(sym);
@@ -622,6 +638,7 @@ selectSymbol(sym: string): void {
       this.depth = { bids: [], asks: [], lastPrice: 0 };
     }
   }
+  
 
   const currentPrice = this.marketData[sym]?.price ?? 0;
   if (this.orderType === OrderType.LIMIT) {
@@ -640,6 +657,25 @@ selectSymbol(sym: string): void {
   private getActiveSymbols(): string[] {
   // Pour l’instant on prend tous les symboles de la catégorie sélectionnée
   return this.symbols;
+}
+fetchAISignal(symbol: string) {
+  this.aiLoading = true;
+  this.aiSignal = null;
+  this.aiConfidence = null;
+  this.aiRecommendations = [];
+
+  this.patternAI.analyze(symbol).subscribe({
+    next: (res) => {
+      this.aiSignal = res.signal;
+      this.aiConfidence = res.confidence;
+      this.aiRecommendations = res.recommendations ?? [];
+      this.aiLoading = false;
+    },
+    error: () => {
+      this.aiSignal = 'Erreur';
+      this.aiLoading = false;
+    }
+  });
 }
 allocatePortfolio(): void {
   // 1️⃣ Vérifier qu'on a une session et des symboles
@@ -818,5 +854,17 @@ allocatePortfolio(): void {
     if (invested <= 0) return 0;
     return (this.getPortfolioPnL() / invested) * 100;
   }
+  loadTraderAnalysis(): void {
+  this.traderAnalysis.runAnalysis().subscribe({
+    next: (res) => {
+      console.log("📊 Analyse trader:", res);
+      this.aiStrategies = res.strategies || [];
+    },
+    error: (err) => {
+      console.error("❌ Erreur analyse trader:", err);
+    }
+  });
+}
+
   
 }

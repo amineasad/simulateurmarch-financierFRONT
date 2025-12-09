@@ -997,3 +997,39 @@
   color: #22c55e;
   font-size: 0.9rem;
 }
+.ai-signal-box {
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 10px;
+  font-size: 0.8rem;
+}
+
+.ai-label {
+  font-weight: 700;
+  color: #60a5fa;
+  margin-right: 6px;
+}
+
+.ai-value.bullish {
+  color: #22c55e;
+  font-weight: bold;
+}
+
+.ai-value.bearish {
+  color: #ef4444;
+  font-weight: bold;
+}
+
+.ai-confidence {
+  margin-left: 5px;
+  color: #94a3b8;
+}
+
+.ai-reco-list {
+  margin-top: 6px;
+  padding-left: 12px;
+  font-size: 0.75rem;
+  color: #cbd5e1;
+}

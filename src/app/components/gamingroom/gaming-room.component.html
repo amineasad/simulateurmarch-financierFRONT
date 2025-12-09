@@ -127,9 +127,30 @@
         </div>
       </div>
     </div>
+    
 
     <!-- CENTER SECTION -->
     <div class="center-section">
+      <div class="ai-signal-box">
+  <ng-container *ngIf="aiLoading">
+    🔄 Analyse du marché en cours...
+  </ng-container>
+
+  <ng-container *ngIf="!aiLoading && aiSignal">
+    <span class="ai-label">📡 Signal IA :</span>
+    <span class="ai-value" [class.bullish]="aiSignal === 'HAUSSIER'"
+                           [class.bearish]="aiSignal === 'BAISSIER'">
+      {{ aiSignal }}
+    </span>
+
+    <span class="ai-confidence">({{ aiConfidence | percent:'1.0-0' }})</span>
+
+    <ul class="ai-reco-list">
+      <li *ngFor="let r of aiRecommendations">💡 {{ r }}</li>
+    </ul>
+  </ng-container>
+</div>
+
       <!-- CHART -->
       <div class="panel chart-panel">
         <div class="panel-header">
@@ -144,6 +165,7 @@
             </span>
           </div>
         </div>
+        
         <div class="chart-content">
           <app-price-chart [symbol]="tradingViewSymbol" [interval]="'1'" [theme]="'dark'" [autosize]="true"></app-price-chart>
         </div>
@@ -349,6 +371,26 @@
             </span>
           </div>
         </div>
+        <div class="panel strategy-analysis-panel">
+  <div class="panel-header">
+    <h3>🧠 Analyse IA des Stratégies</h3>
+  </div>
+
+  <div *ngFor="let strat of aiStrategies" class="strategy-item">
+    <strong>{{ strat.name }}</strong>
+    <span class="badge"
+      [ngClass]="{
+        'good': strat.classification === 'GAGNANTE',
+        'risk': strat.classification === 'À RISQUE',
+        'bad': strat.classification === 'PERDANTE'
+      }">
+      {{ strat.classification }}
+    </span>
+    <div class="details">
+      WR: {{strat.winRate}}% • PF: {{strat.profitFactor}}
+    </div>
+  </div>
+</div>
 
         <ng-template #noPos>
           <div class="empty-state">
@@ -359,6 +401,8 @@
     </div>
   </div>
 </div>
+
+
 
 <div class="loading-screen" *ngIf="!session">
   <div class="spinner"></div>
