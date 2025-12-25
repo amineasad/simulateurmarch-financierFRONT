@@ -528,4 +528,7 @@ export class TradingRoomComponent implements OnInit, OnDestroy {
    goToReclamation(): void {
     this.router.navigate(['/reclamation']);
   }
+  goToIaPredictions(): void {
+  this.router.navigate(['/ia-predictions']);
+}
 }

@@ -1,4 +1,5 @@
 
+
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule } from '@angular/common/http';
@@ -41,6 +42,8 @@ import { SafeUrlPipe } from './pipes/safe-url.pipe';
 //salledejeu
 import { SessionOrderBookComponent } from './components/session-order-book/session-order-book.component';
 import { VirtualClockComponent } from './components/virtual-clock/virtual-clock.component';
+//iaprediction
+import { IaPredictionsComponent } from './components/ia-predictions/ia-predictions.component';
 
 
 
@@ -76,6 +79,8 @@ GamingRoomComponent,
      //salledejeu
      SessionOrderBookComponent,
      VirtualClockComponent,
+     //iaprediction
+     IaPredictionsComponent
     
     
     // ← Ajout

@@ -40,6 +40,8 @@ import { EducationComponent } from './components/education/education.component';
 import { EducationAdminComponent } from './components/education-admin/education-admin.component';
 import { ForumComponent } from './components/forum/forum.component';
 import { ReclamationComponent } from './components/reclamation/reclamation.component';
+//iaprediction
+import { IaPredictionsComponent } from './components/ia-predictions/ia-predictions.component';
 
 // Guard (si vous en avez un)
 // import { AuthGuard } from './guards/auth.guard';
@@ -86,6 +88,9 @@ const routes: Routes = [
   { path: 'forum', component: ForumComponent },
   //ia
   { path: 'reclamation', component: ReclamationComponent },
+  //iaprediction
+  { path: 'ia-predictions', component: IaPredictionsComponent },
+  
 
   
   // ✅ Redirection par défaut vers Landing Page

@@ -4,20 +4,21 @@
   <!-- TOP BAR -->
   <div class="top-bar">
     <div class="navbar-left">
-  <div class="navbar-logo">📈 TRADIX</div>
+  <div class="navbar-logo"> TRADIX</div>
 
   <nav class="navbar-links">
-    <a (click)="goToLobby()">🎮 Salle de jeu</a>
-    <a (click)="goToDetails()">ℹ️ Infos</a>
-    <a (click)="goToEducation()">🎓 Apprendre</a>
-    <a (click)="goToForum()">💬 Forum</a>
-    <a (click)="goToReclamation()">🛎️ Reclamation</a>
+    <a (click)="goToLobby()"> Salle de jeu</a>
+    <a (click)="goToDetails()">ℹ Infos</a>
+    <a (click)="goToIaPredictions()"> IA – Prédictions 5 jours</a>
+    <a (click)="goToEducation()"> Apprendre</a>
+    <a (click)="goToForum()"> Forum</a>
+    <a (click)="goToReclamation()"> Reclamation</a>
   </nav>
 </div>
     
     <div class="top-bar-right">
       <div class="time-info">
-        <span class="icon">🕐</span>
+        <span class="icon"></span>
         <span class="time">{{ currentTime | date:'HH:mm:ss' }}</span>
         <span class="separator">|</span>
         <span class="market-status" [class.open]="isConnected">
