@@ -1,0 +1,751 @@
+/* ================================================================ */
+/* FORUM TRADIX - DESIGN PROFESSIONNEL (Style LinkedIn/Facebook)    */
+/* ================================================================ */
+
+/* ========== VARIABLES & BASE ========== */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f3f2ef;
+  --bg-card: #ffffff;
+  --border-color: #e0e0e0;
+  --text-primary: #000000;
+  --text-secondary: #666666;
+  --accent-blue: #0a66c2;
+  --accent-hover: #004182;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ========== CONTENEUR GLOBAL ========== */
+.forum-global-container {
+  min-height: 100vh;
+  background: var(--bg-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  padding: 0;
+  margin: 0;
+}
+
+/* ========== HEADER STYLE LINKEDIN ========== */
+.forum-header {
+  background: var(--bg-card);
+  padding: 0;
+  margin: 0;
+  box-shadow: var(--shadow-sm);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  max-width: 1128px;
+  margin: 0 auto;
+  padding: 8px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.forum-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-blue);
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.forum-subtitle {
+  display: none; /* Caché pour un look plus épuré */
+}
+
+/* ========== USER INFO (Style LinkedIn) ========== */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 12px;
+  border-radius: 24px;
+  background: transparent;
+  transition: background 0.2s;
+  border: none;
+}
+
+.user-info:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.current-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  object-fit: cover;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-details strong {
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.btn-logout {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  padding: 6px 16px;
+  border-radius: 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-logout:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: var(--text-secondary);
+}
+
+/* ========== UTILITY BUTTONS (Discret) ========== */
+.utility-buttons {
+  max-width: 1128px;
+  margin: 16px auto;
+  padding: 0 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-action {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-action:hover {
+  background: rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.refresh-btn {
+  color: var(--accent-blue);
+}
+
+/* ========== POST CREATION (Style Facebook) ========== */
+.post-creation-card {
+  background: var(--bg-card);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin: 0 auto 16px;
+  max-width: 680px;
+  box-shadow: var(--shadow-sm);
+}
+
+.creation-header {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.creation-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.post-textarea {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  padding: 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: none;
+  min-height: 60px;
+  line-height: 1.5;
+}
+
+.post-textarea:focus {
+  outline: none;
+}
+
+.post-textarea::placeholder {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* ========== IMAGE PREVIEW ========== */
+.image-preview {
+  position: relative;
+  margin: 12px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  max-width: 100%;
+  border: 1px solid var(--border-color);
+  background: #f9f9f9;
+}
+
+.image-preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.remove-image {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.remove-image:hover {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.05);
+}
+
+/* ========== POST ACTIONS (Style LinkedIn) ========== */
+.post-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.btn-photo-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-weight: 600;
+  border: none;
+  font-size: 0.875rem;
+}
+
+.btn-photo-upload:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.btn-post {
+  background: var(--accent-blue);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  box-shadow: none;
+}
+
+.btn-post:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: none;
+}
+
+.btn-post:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========== LOADING ========== */
+.loading-indicator {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-top-color: var(--accent-blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========== POSTS LIST (Style Feed LinkedIn) ========== */
+.posts-list {
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 24px 24px;
+}
+
+.post-card {
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  transition: box-shadow 0.2s;
+  position: relative;
+  box-shadow: var(--shadow-sm);
+}
+
+.post-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* ========== MY POST BADGE ========== */
+.my-post-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(10, 102, 194, 0.1);
+  color: var(--accent-blue);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(10, 102, 194, 0.2);
+}
+
+/* ========== POST AUTHOR ========== */
+.post-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 16px 12px;
+}
+
+.author-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: none;
+}
+
+.author-info {
+  flex: 1;
+}
+
+.author-info strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.post-date {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+/* ========== POST CONTENT ========== */
+.post-content {
+  padding: 0 16px 12px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  font-size: 0.875rem;
+}
+
+.post-content p {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* ========== POST IMAGE (Style Facebook) ========== */
+.post-image-container {
+  margin: 0;
+  overflow: hidden;
+  max-height: 500px;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  background: #f9f9f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.post-image {
+  max-width: 100%;
+  max-height: 500px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+/* ========== POST FOOTER (Actions LinkedIn) ========== */
+.post-footer {
+  display: flex;
+  gap: 4px;
+  padding: 8px 8px;
+  border-top: 1px solid var(--border-color);
+  margin: 0;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  flex: 1;
+}
+
+.action-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.action-btn .icon {
+  font-size: 1.25rem;
+}
+
+.like-btn.liked {
+  color: #e0245e;
+}
+
+.comment-btn {
+  color: var(--text-secondary);
+}
+
+/* ========== COMMENTS SECTION ========== */
+.comments-section {
+  margin: 0;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.02);
+  border-top: 1px solid var(--border-color);
+}
+
+.comment-item {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  border-left: none;
+}
+
+.comment-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: none;
+  flex-shrink: 0;
+}
+
+.comment-body {
+  flex: 1;
+  background: var(--bg-card);
+  padding: 10px 12px;
+  border-radius: 18px;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.comment-header strong {
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.comment-date {
+  color: var(--text-secondary);
+  font-size: 0.6875rem;
+}
+
+.comment-text {
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.4;
+  font-size: 0.875rem;
+}
+
+.no-comments {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* ========== TYPING INDICATOR ========== */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.typing-bubble {
+  display: flex;
+  gap: 3px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border-radius: 18px;
+}
+
+.typing-bubble span {
+  width: 6px;
+  height: 6px;
+  background: var(--text-secondary);
+  border-radius: 50%;
+  animation: typing 1.4s infinite;
+}
+
+.typing-bubble span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-bubble span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+.typing-indicator small {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+/* ========== NEW COMMENT (Style Messenger) ========== */
+.new-comment {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.comment-input-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: none;
+  flex-shrink: 0;
+}
+
+.comment-input {
+  flex: 1;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-radius: 18px;
+  padding: 10px 16px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: border 0.2s;
+}
+
+.comment-input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.comment-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.btn-send-comment {
+  background: var(--accent-blue);
+  color: white;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-send-comment:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: scale(1.05);
+}
+
+.btn-send-comment:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========== EMPTY STATE ========== */
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  font-size: 1.125rem;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.empty-state p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* ========== SCROLLBAR (Discret) ========== */
+.posts-list::-webkit-scrollbar,
+.comments-section::-webkit-scrollbar {
+  width: 8px;
+}
+
+.posts-list::-webkit-scrollbar-track,
+.comments-section::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.posts-list::-webkit-scrollbar-thumb,
+.comments-section::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.posts-list::-webkit-scrollbar-thumb:hover,
+.comments-section::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .header-content {
+    padding: 8px 16px;
+  }
+
+  .forum-title {
+    font-size: 1.25rem;
+  }
+
+  .user-details strong {
+    display: none;
+  }
+
+  .utility-buttons {
+    padding: 0 16px;
+  }
+
+  .posts-list {
+    padding: 0 16px 16px;
+  }
+
+  .post-creation-card {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .post-card {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .my-post-badge {
+    position: static;
+    margin-bottom: 12px;
+    display: inline-block;
+  }
+}
+
+/* ========== ANIMATIONS SUBTILES ========== */
+.post-card,
+.post-creation-card,
+.action-btn,
+.btn-action {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.creation-avatar,
+.author-avatar,
+.comment-avatar,
+.current-user-avatar {
+  transition: transform 0.2s;
+}
+
+.creation-avatar:hover,
+.author-avatar:hover,
+.comment-avatar:hover {
+  transform: scale(1.05);
+}

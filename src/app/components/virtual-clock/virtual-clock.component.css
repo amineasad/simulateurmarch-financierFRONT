@@ -1,0 +1,296 @@
+/* src/app/components/virtual-clock/virtual-clock.component.css */
+
+.virtual-clock {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  min-width: 300px;
+}
+
+.virtual-clock.pulsing {
+  transform: scale(1.02);
+  box-shadow: 0 12px 40px rgba(59, 130, 246, 0.4);
+}
+
+.virtual-clock.market-closed {
+  opacity: 0.8;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* En-tête */
+.clock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.clock-icon {
+  font-size: 20px;
+  margin-right: 8px;
+}
+
+.clock-label {
+  flex: 1;
+}
+
+.speed-badge {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Heure virtuelle (grande) */
+.virtual-time {
+  font-size: 52px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 16px;
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 2px 12px rgba(59, 130, 246, 0.6);
+  letter-spacing: 2px;
+  transition: all 0.3s ease;
+}
+
+.pulsing .virtual-time {
+  transform: scale(1.05);
+  text-shadow: 0 4px 20px rgba(59, 130, 246, 0.8);
+}
+
+/* Phase de trading */
+.trading-phase {
+  text-align: center;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.phase-indicator {
+  font-size: 16px;
+  animation: pulse 2s infinite;
+}
+
+/* Couleurs par phase */
+.trading-phase.pre_market {
+  background: rgba(100, 116, 139, 0.2);
+  color: #cbd5e1;
+}
+
+.trading-phase.opening {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.trading-phase.mid_day {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.trading-phase.closing {
+  background: rgba(251, 146, 60, 0.2);
+  color: #fdba74;
+  border: 1px solid rgba(251, 146, 60, 0.3);
+}
+
+.trading-phase.after_market {
+  background: rgba(71, 85, 105, 0.2);
+  color: #94a3b8;
+}
+
+/* Barre de progression */
+.progress-bar {
+  width: 60%;
+  height: 4px;
+  margin: 0 auto 16px auto;
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s linear, background 0.5s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+/* Informations */
+.time-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.info-row .label {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.info-row .value {
+  color: #fff;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+}
+
+/* Statut du marché */
+.market-status {
+  text-align: center;
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 14px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.market-status.open {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s infinite;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.6;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .virtual-clock {
+    padding: 16px;
+    min-width: auto;
+  }
+  
+  .virtual-time {
+    font-size: 42px;
+  }
+}
+/* --- MODE HORIZONTAL --- */
+.virtual-clock {
+  display: flex;
+  flex-direction: row;          /* aligner horizontalement */
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;                    /* espacement entre les blocs */
+  padding: 20px 28px;
+  min-width: 650px;             /* élargir la carte */
+  max-width: 800px;
+  height: 150px;                /* réduit la hauteur */
+}
+
+/* Blocs internes */
+.clock-header,
+.virtual-time,
+.trading-phase,
+.progress-bar,
+.time-info,
+.market-status {
+  margin-bottom: 0 !important;  /* supprimer les marges verticales */
+}
+
+/* Heure au centre mais plus petit */
+.virtual-time {
+  font-size: 38px;              /* avant 52px */
+  margin: 0;
+}
+
+/* Phase à droite de l'heure */
+.trading-phase {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+/* Barre de progression horizontale compacte */
+.progress-bar {
+  width: 140px;                 /* barre beaucoup plus courte */
+  height: 4px;
+  margin: 0;
+}
+
+/* Infos regroupées dans un petit bloc */
+.time-info {
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+/* Statut à l’extrême droite */
+.market-status {
+  padding: 8px 12px;
+  font-size: 13px;
+}

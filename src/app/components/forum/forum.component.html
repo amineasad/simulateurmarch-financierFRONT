@@ -1,0 +1,175 @@
+<!-- src/app/components/forum/forum.component.html -->
+<div class="forum-global-container">
+
+  <!-- Header du forum -->
+  <div class="forum-header">
+    <div class="header-content">
+      <div>
+        <h1 class="forum-title">🌍 Forum Trading Global</h1>
+        <p class="forum-subtitle">Partagez vos idées avec la communauté</p>
+      </div>
+      
+      <!-- Info utilisateur connecté -->
+      <div class="user-info" *ngIf="currentUser">
+        <img [src]="getCurrentUserAvatar()" class="current-user-avatar" alt="Avatar">
+        <div class="user-details">
+          <strong>{{ getCurrentUserFullName() }}</strong>
+          <button class="btn-logout" (click)="logout()">Déconnexion</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boutons utilitaires -->
+  <div class="utility-buttons">
+   
+    <button class="btn-action refresh-btn" (click)="loadPosts()" [disabled]="isLoading">
+      🔄 {{ isLoading ? 'Chargement...' : 'Actualiser' }}
+    </button>
+  </div>
+
+  <!-- Formulaire de création de post -->
+  <div class="post-creation-card">
+    <div class="creation-header">
+      <img [src]="getCurrentUserAvatar()" class="creation-avatar" alt="Votre avatar">
+      <textarea 
+        [(ngModel)]="newPostContent" 
+        placeholder="Partage ton trade, ton analyse ou pose une question..." 
+        class="post-textarea"
+        rows="3"
+        [disabled]="isLoading">
+      </textarea>
+    </div>
+
+    <!-- Prévisualisation de l'image sélectionnée -->
+    <div class="image-preview" *ngIf="previewImage">
+      <img [src]="previewImage" alt="Prévisualisation">
+      <button class="remove-image" (click)="removeImage()" title="Supprimer">×</button>
+    </div>
+
+    <!-- Actions : upload + publier -->
+    <div class="post-actions">
+      <label class="btn-photo-upload" title="Joindre une image">
+        <input type="file" accept="image/*" (change)="onFileSelected($event)" hidden [disabled]="isLoading">
+        📷 Photo
+      </label>
+
+      <button 
+        class="btn-action btn-post" 
+        (click)="publishPost()"
+        [disabled]="(!newPostContent.trim() && !selectedFile) || isLoading">
+        {{ isLoading ? '⏳ Publication...' : '✨ Publier' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Indicateur de chargement -->
+  <div class="loading-indicator" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Chargement en cours...</p>
+  </div>
+
+  <!-- Liste des posts -->
+  <div class="posts-list" *ngIf="!isLoading">
+    <div *ngFor="let post of posts" class="post-card">
+
+      <!-- Badge "Mon post" -->
+      <div class="my-post-badge" *ngIf="isMyPost(post)">
+        📌 Votre publication
+      </div>
+
+      <!-- Auteur + date -->
+      <div class="post-author">
+        <img [src]="getAvatar(post)" class="author-avatar" alt="Avatar">
+        <div class="author-info">
+          <strong>{{ post.authorFullName || 'Utilisateur' }}</strong>
+          <div class="post-date">{{ formatDate(post.createdAt) }}</div>
+        </div>
+      </div>
+
+      <!-- Contenu texte -->
+      <div class="post-content">
+        <p [innerHTML]="post.content"></p>
+      </div>
+
+      <!-- IMAGE DU POST (seulement si elle existe) -->
+      <div class="post-image-container" *ngIf="post.imagePath">
+        <img 
+          [src]="getImageUrl(post.imagePath)" 
+          alt="Image du post" 
+          class="post-image"
+          (error)="onImageError($any($event))" />
+      </div>
+
+      <!-- Actions Like & Commentaire -->
+      <div class="post-footer">
+        <button 
+          class="action-btn like-btn" 
+          [class.liked]="post.userLiked" 
+          (click)="like(post)">
+          <span class="icon">{{ post.userLiked ? '❤️' : '🤍' }}</span>
+          <span>{{ post.likeCount || 0 }}</span>
+        </button>
+        <button 
+          class="action-btn comment-btn" 
+          (click)="toggleComments(post)">
+          <span class="icon">💬</span>
+          <span>{{ post.comments?.length || 0 }}</span>
+        </button>
+      </div>
+
+      <!-- Section commentaires -->
+      <div class="comments-section" *ngIf="post.showComments">
+        
+        <!-- Liste des commentaires -->
+        <div *ngFor="let comment of post.comments" class="comment-item">
+          <img [src]="getAvatar(comment)" class="comment-avatar" alt="Avatar">
+          <div class="comment-body">
+            <div class="comment-header">
+              <strong>{{ comment.authorFullName || 'Utilisateur' }}</strong>
+              <small class="comment-date">{{ formatDate(comment.createdAt) }}</small>
+            </div>
+            <p class="comment-text">{{ comment.content }}</p>
+          </div>
+        </div>
+
+        <!-- État vide des commentaires -->
+        <div class="no-comments" *ngIf="!post.comments || post.comments.length === 0">
+          <p>💭 Sois le premier à commenter !</p>
+        </div>
+
+        <!-- Indicateur de frappe -->
+        <div class="typing-indicator" *ngIf="post.isTyping">
+          <div class="typing-bubble">
+            <span></span><span></span><span></span>
+          </div>
+          <small>Quelqu'un écrit...</small>
+        </div>
+
+        <!-- Nouveau commentaire -->
+        <div class="new-comment">
+          <img [src]="getCurrentUserAvatar()" class="comment-input-avatar" alt="Votre avatar">
+          <input 
+            [(ngModel)]="post.newComment" 
+            (input)="onCommentInput(post)"
+            placeholder="Écris un commentaire..." 
+            class="comment-input"
+            (keyup.enter)="sendComment(post)">
+          <button 
+            class="btn-send-comment" 
+            (click)="sendComment(post)" 
+            [disabled]="!post.newComment?.trim()">
+            ➤
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- État vide -->
+    <div class="empty-state" *ngIf="posts.length === 0 && !isLoading">
+      <div class="empty-icon">📭</div>
+      <h3>Aucun message pour le moment</h3>
+      <p>Sois le premier à partager quelque chose !</p>
+    </div>
+  </div>
+</div>

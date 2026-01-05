@@ -1,0 +1,42 @@
+<div class="marketplace-container">
+  <div class="header">
+    <h2>Bot Marketplace</h2>
+    <p>Discover and deploy automated trading strategies</p>
+  </div>
+
+  <div class="filters">
+    <button [class.active]="selectedStrategy === 'ALL'" (click)="filterByStrategy('ALL')">All</button>
+    <button *ngFor="let strategy of strategies" 
+            [class.active]="selectedStrategy === strategy" 
+            (click)="filterByStrategy(strategy)">
+      {{strategy}}
+    </button>
+  </div>
+
+  <div class="templates-grid">
+    <div class="template-card" *ngFor="let template of filteredTemplates">
+      <div class="card-header">
+        <h3>{{template.name}}</h3>
+        <span class="strategy-badge">{{template.strategyType}}</span>
+      </div>
+      <p class="description">{{template.description}}</p>
+      
+      <div class="metrics">
+        <div class="metric">
+          <span class="label">Return</span>
+          <span class="value positive">{{template.historicalReturns}}%</span>
+        </div>
+        <div class="metric">
+          <span class="label">Win Rate</span>
+          <span class="value">{{template.winRate}}%</span>
+        </div>
+        <div class="metric">
+          <span class="label">Drawdown</span>
+          <span class="value negative">{{template.drawdown}}%</span>
+        </div>
+      </div>
+
+      <button class="use-btn" (click)="useTemplate(template)">Use Strategy</button>
+    </div>
+  </div>
+</div>

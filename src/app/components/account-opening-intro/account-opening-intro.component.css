@@ -1,0 +1,128 @@
+/* --- Conteneur principal --- */
+.intro-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  color: #f1f5f9;
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* --- Contenu principal --- */
+.intro-content {
+  max-width: 1100px;
+  width: 100%;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1.5px solid rgba(59, 130, 246, 0.3);
+  border-radius: 1.5rem;
+  padding: 3rem;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 10px 40px rgba(59, 130, 246, 0.2);
+  transition: transform 0.3s ease;
+}
+
+.intro-content:hover {
+  transform: translateY(-5px);
+}
+
+/* --- Titre et sous-titre --- */
+h1 {
+  font-size: 2.8rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 1rem;
+}
+
+.subtitle {
+  color: #94a3b8;
+  font-size: 1.1rem;
+  margin-bottom: 3rem;
+  line-height: 1.6;
+}
+
+/* --- Étapes --- */
+.steps {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2.5rem;
+  margin-bottom: 3rem;
+}
+
+.step {
+  width: 220px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  transition: all 0.3s ease;
+}
+
+.step:hover {
+  transform: translateY(-8px);
+  border-color: #3b82f6;
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+}
+
+.step-number {
+  font-size: 4rem;
+  color: #3b82f6;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.step h3 {
+  color: #f9fafb;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.step p {
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+/* --- Bouton principal --- */
+.start-btn {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 1rem 2.5rem;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.start-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 25px rgba(59, 130, 246, 0.4);
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2.2rem;
+  }
+
+  .intro-content {
+    padding: 2rem;
+  }
+
+  .steps {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .step {
+    width: 100%;
+    max-width: 350px;
+  }
+}

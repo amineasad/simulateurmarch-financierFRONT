@@ -1,0 +1,197 @@
+
+.orderbook-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0f172a;
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.orderbook-header {
+  padding: 12px 16px;
+  background: rgba(30, 41, 59, 0.5);
+  border-bottom: 1px solid #334155;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.orderbook-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.last-price {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.last-price .label {
+  color: #94a3b8;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.last-price .value {
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: #60a5fa;
+}
+
+.orderbook-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.orderbook-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: #1e293b;
+  height: 100%;
+}
+
+.orderbook-side {
+  background: #0f172a;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.side-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(30, 41, 59, 0.8);
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border-bottom: 1px solid #334155;
+  letter-spacing: 0.5px;
+}
+
+.levels-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.level {
+  position: relative;
+  margin-bottom: 2px;
+  border-radius: 4px;
+  overflow: hidden;
+  min-height: 28px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.level:hover {
+  background: rgba(30, 41, 59, 0.3);
+}
+
+.level-background {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.2;
+  transition: width 0.3s ease;
+}
+
+.bid-bg {
+  background: linear-gradient(90deg, transparent 0%, #22c55e 100%);
+}
+
+.ask-bg {
+  background: linear-gradient(90deg, transparent 0%, #ef4444 100%);
+}
+
+.level-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.bid-level .level-content {
+  color: #86efac;
+}
+
+.ask-level .level-content {
+  color: #fca5a5;
+}
+
+.level-price {
+  font-weight: 600;
+}
+
+.level-qty {
+  font-weight: 700;
+}
+
+.empty-message {
+  padding: 20px;
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.orderbook-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #64748b;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.orderbook-empty p {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.orderbook-empty small {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+/* Scrollbar styling */
+.levels-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.levels-container::-webkit-scrollbar-track {
+  background: #0a0e1a;
+}
+
+.levels-container::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
+
+.levels-container::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}

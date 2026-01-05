@@ -1,0 +1,224 @@
+/* ========= CONTAINER GLOBAL ========= */
+.ia-predictions-container {
+  min-height: calc(100vh - 80px);
+  padding: 24px;
+  background: radial-gradient(circle at top, #0b1220 0, #020617 45%, #000 100%);
+  color: #e5e7eb;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* ========= HEADER CARD ========= */
+.ia-header-card {
+  max-width: 1200px;
+  margin: 0 auto 20px;
+  padding: 18px 22px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #020617, #0b1120);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.6);
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+}
+
+.ia-header-left {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.ia-chip {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 0 0, #22c55e, #16a34a);
+  color: #0f172a;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.6);
+}
+
+.ia-header-card h1 {
+  margin: 0 0 4px;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.ia-header-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #9ca3af;
+}
+
+.ia-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.btn-soft {
+  border-radius: 999px;
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  background: radial-gradient(circle at 0 0, rgba(37, 99, 235, 0.9), rgba(29, 78, 216, 0.9));
+  color: white;
+  padding: 7px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.7);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-soft:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.9);
+}
+
+.btn-soft:disabled {
+  opacity: 0.6;
+  cursor: default;
+  box-shadow: none;
+}
+
+.last-update {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* ========= ERROR CARD ========= */
+.ia-error-card {
+  max-width: 1200px;
+  margin: 0 auto 16px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fecaca;
+  font-size: 0.85rem;
+}
+
+/* ========= LOADING ========= */
+.ia-loading {
+  max-width: 1200px;
+  margin: 40px auto;
+  text-align: center;
+  color: #cbd5e1;
+}
+
+.spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 3px solid rgba(148, 163, 184, 0.35);
+  border-top-color: #38bdf8;
+  margin: 0 auto 12px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========= TABLE CARD ========= */
+.ia-table-card {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(30, 64, 175, 0.7);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.8);
+}
+
+.ia-table-wrapper {
+  overflow-x: auto;
+}
+
+.ia-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.ia-table thead {
+  background: linear-gradient(to right, rgba(15, 118, 110, 0.3), rgba(37, 99, 235, 0.3));
+}
+
+.ia-table th,
+.ia-table td {
+  padding: 10px 12px;
+  text-align: center;
+  border-bottom: 1px solid rgba(55, 65, 81, 0.7);
+}
+
+.ia-table th {
+  font-weight: 600;
+  color: #e5e7eb;
+  white-space: nowrap;
+}
+
+.ia-table tbody tr:hover {
+  background: rgba(15, 23, 42, 0.8);
+}
+
+/* ========= COLONNE TICKER ========= */
+.ticker-cell {
+  text-align: left;
+  min-width: 110px;
+}
+
+.ticker-symbol {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #f9fafb;
+}
+
+.ticker-status {
+  font-size: 0.75rem;
+  color: #f97373;
+}
+
+/* ========= ERREUR PAR ACTIF ========= */
+.error-cell {
+  text-align: left;
+  font-size: 0.8rem;
+  color: #fecaca;
+}
+
+/* ========= LÉGENDE ========= */
+.ia-legend {
+  margin-top: 12px;
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+/* ========= RESPONSIVE ========= */
+@media (max-width: 768px) {
+  .ia-predictions-container {
+    padding: 16px 10px;
+  }
+
+  .ia-header-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ia-header-right {
+    align-items: flex-start;
+  }
+
+  .ia-table-card {
+    padding: 10px;
+  }
+
+  .ia-table th,
+  .ia-table td {
+    padding: 8px 10px;
+  }
+}

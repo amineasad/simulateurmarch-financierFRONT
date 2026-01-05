@@ -1,0 +1,179 @@
+<div class="education-container" (wheel)="onWheel($event)">
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
+      <h2>🎯 Parcours d’apprentissage</h2>
+      <p class="subtitle">Un duo Vidéo + Article par étape. Terminez-les pour avancer.</p>
+
+      <!-- Level chips (couleurs + états actif / dim / locked) -->
+      <div class="chips">
+        <button class="chip debutant"
+                [class.active]="difficulty==='EASY'"
+                [class.dim]="isDimmed('EASY')"
+                (click)="setDifficulty('EASY')">
+          Débutant
+        </button>
+
+        <button class="chip intermediaire"
+                [class.active]="difficulty==='MID'"
+                [class.dim]="isDimmed('MID')"
+                [disabled]="!isLevelUnlocked('MID')"
+                [class.locked]="!isLevelUnlocked('MID')"
+                [title]="isLevelUnlocked('MID') ? '' : 'Terminez le niveau Débutant pour débloquer'"
+                (click)="setDifficulty('MID')">
+          Intermédiaire
+        </button>
+
+        <button class="chip avance"
+                [class.active]="difficulty==='ADV'"
+                [class.dim]="isDimmed('ADV')"
+                [disabled]="!isLevelUnlocked('ADV')"
+                [class.locked]="!isLevelUnlocked('ADV')"
+                [title]="isLevelUnlocked('ADV') ? '' : 'Terminez le niveau Intermédiaire pour débloquer'"
+                (click)="setDifficulty('ADV')">
+          Avancé
+        </button>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="ring" [style.--value]="completionPercent">
+        <div class="ring-inner">
+          <div class="pct">{{ completionPercent }}%</div>
+          <div class="caption">complété</div>
+        </div>
+      </div>
+      <button class="btn-primary" routerLink="/trading">← Retour au trading</button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <ng-container *ngIf="loading">
+    <div class="pair-grid">
+      <div class="skeleton skel-card"></div>
+      <div class="skeleton skel-card"></div>
+    </div>
+  </ng-container>
+
+  <!-- ERROR -->
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <!-- SINGLE PAIR VIEW -->
+  <ng-container *ngIf="!loading && !error">
+    <div class="pair-grid" *ngIf="maxSteps > 0; else emptyLevel">
+      <!-- ARTICLE (LEFT) -->
+      <div>
+        <div class="resource-card" *ngIf="currentArticle as a">
+          <div class="title-row">
+            <h3>{{ a.title }}</h3>
+            <span class="type-chip article">Article</span>
+            <span class="type-chip level" [ngClass]="classeNiveauFR(a.difficulty)">
+              {{ labelNiveauFR(a.difficulty) }}
+            </span>
+          </div>
+
+          <div class="meta">
+            <span *ngIf="a.createdAt" class="chip muted">📅 {{ a.createdAt | date:'mediumDate' }}</span>
+            <span class="chip muted" [class.done]="!!progress[a.id ?? a.title]?.completed">
+              Progress {{ progress[a.id ?? a.title]?.completed ? '✅' : '—' }}
+            </span>
+          </div>
+
+          <p class="muted description">{{ a.description }}</p>
+
+          <!-- SCROLLABLE article preview -->
+          <div class="article-preview media-frame" [innerHTML]="a.content"></div>
+
+          <div class="card-actions">
+            <button class="small-btn" (click)="openArticle(a)">Lire l’article</button>
+            <button class="small-btn" [class.fav]="!!progress[a.id ?? a.title]?.favorite"
+                    (click)="toggleFavorite(a)">★ Favori</button>
+            <button class="small-btn" [class.done]="!!progress[a.id ?? a.title]?.completed"
+                    (click)="toggleComplete(a)">
+              {{ progress[a.id ?? a.title]?.completed ? 'Marquer non fait' : 'Marquer fait' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="muted" *ngIf="!currentArticle">Aucun article à cette étape.</div>
+      </div>
+
+      <!-- VIDEO (RIGHT) -->
+      <div>
+        <div class="resource-card" *ngIf="currentVideo as v">
+          <div class="title-row">
+            <h3>{{ v.title }}</h3>
+            <span class="type-chip video">Vidéo</span>
+            <span class="type-chip level" [ngClass]="classeNiveauFR(v.difficulty)">
+              {{ labelNiveauFR(v.difficulty) }}
+            </span>
+          </div>
+
+          <div class="meta">
+            <span *ngIf="v.createdAt" class="chip muted">📅 {{ v.createdAt | date:'mediumDate' }}</span>
+            <span class="chip muted" [class.done]="!!progress[v.id ?? v.title]?.completed">
+              Progress {{ progress[v.id ?? v.title]?.completed ? '✅' : '—' }}
+            </span>
+          </div>
+
+          <p class="muted description">{{ v.description }}</p>
+
+          <!-- thumb / player -->
+          <div *ngIf="playingId !== keyOf(v)" class="media-frame thumb" (click)="playInCard(v); $event.stopPropagation()">
+            <img *ngIf="youtubeThumb(v.url) as th" [src]="th" alt="Aperçu vidéo" class="thumb-img" />
+            <div *ngIf="!youtubeThumb(v.url)" class="thumb-img" style="display:grid;place-items:center;">▶</div>
+            <div class="play-overlay">▶</div>
+          </div>
+          <div *ngIf="playingId === keyOf(v)" class="media-frame inline-video">
+            <iframe [src]="embedFor(v)" allowfullscreen></iframe>
+          </div>
+
+          <div class="card-actions">
+            <button class="small-btn" (click)="playInCard(v)">Lire</button>
+            <button class="small-btn" [class.fav]="!!progress[v.id ?? v.title]?.favorite"
+                    (click)="toggleFavorite(v)">★ Favori</button>
+            <button class="small-btn" [class.done]="!!progress[v.id ?? v.title]?.completed"
+                    (click)="toggleComplete(v)">
+              {{ progress[v.id ?? v.title]?.completed ? 'Marquer non fait' : 'Marquer fait' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="muted" *ngIf="!currentVideo">Aucune vidéo à cette étape.</div>
+      </div>
+    </div>
+
+    <ng-template #emptyLevel>
+      <div class="muted">Aucun contenu pour ce niveau / filtre.</div>
+    </ng-template>
+  </ng-container>
+
+  <!-- BOTTOM-RIGHT STEP BAR -->
+  <div class="step-bar" *ngIf="!loading && !error && maxSteps > 0">
+    <div class="step-indicator">Étape {{ currentStep + 1 }} / {{ maxSteps }}</div>
+    <div class="step-actions">
+      <button class="step-btn" (click)="prevStep()" [disabled]="!canGoPrev()">⟵ Précédent</button>
+      <button class="step-btn primary" (click)="nextStep()" [disabled]="!canGoNext()">Suivant ⟶</button>
+    </div>
+  </div>
+
+  <!-- FULLSCREEN ARTICLE OVERLAY -->
+  <div class="dock" *ngIf="dockOpen && active && active.type==='ARTICLE'">
+    <div class="dock-header">
+      <div class="dock-title">
+        <span class="pill article">Article</span>
+        <strong>{{ active.title }}</strong>
+      </div>
+      <div class="dock-actions">
+        <button class="small-btn" (click)="toggleFavorite(active)">★</button>
+        <button class="small-btn" (click)="toggleComplete(active)">
+          {{ progress[active.id ?? active.title]?.completed ? '✅' : '☐' }}
+        </button>
+        <button class="small-btn danger" (click)="closeDock()">Fermer</button>
+      </div>
+    </div>
+    <div class="dock-body">
+      <div class="dock-article" [innerHTML]="active.content"></div>
+    </div>
+  </div>
+</div>

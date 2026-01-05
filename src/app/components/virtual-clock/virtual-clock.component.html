@@ -1,0 +1,46 @@
+<!-- src/app/components/virtual-clock/virtual-clock.component.html -->
+<div class="virtual-clock" [class.market-closed]="!clockData?.isMarketOpen" [class.pulsing]="isPulsing">
+  <!-- En-tête -->
+  <div class="clock-header">
+    <span class="clock-icon">🕐</span>
+    <span class="clock-label">Heure du Marché</span>
+    <span class="speed-badge">{{ clockData?.timeScaleFactor?.toFixed(1) }}x</span>
+  </div>
+  
+  <!-- Heure virtuelle (grande) -->
+  <div class="virtual-time">
+    {{ clockData?.virtualTime || '09:30:00' }}
+  </div>
+  
+  <!-- Phase de trading -->
+  <div class="trading-phase" [ngClass]="getPhaseClass()">
+    <span class="phase-indicator">{{ getPhaseEmoji() }}</span>
+    {{ clockData?.phaseDescription || 'Pré-ouverture' }}
+  </div>
+  
+  <!-- Barre de progression -->
+  <div class="progress-bar">
+    <div class="progress-fill" 
+         [style.width.%]="(clockData?.progressPercentage || 0) * 100"
+         [style.background]="getProgressColor()">
+    </div>
+  </div>
+  
+  <!-- Informations détaillées -->
+  <div class="time-info">
+    <div class="info-row">
+      <span class="label">Temps réel restant:</span>
+      <span class="value">{{ formatRealTime(clockData?.realMinutesRemaining) }}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Progression:</span>
+      <span class="value">{{ ((clockData?.progressPercentage || 0) * 100) | number:'1.0-0' }}%</span>
+    </div>
+  </div>
+  
+  <!-- Statut du marché -->
+  <div class="market-status" [class.open]="clockData?.isMarketOpen">
+    <span class="status-dot"></span>
+    {{ clockData?.isMarketOpen ? 'Marché Ouvert' : 'Marché Fermé' }}
+  </div>
+</div>

@@ -1,0 +1,80 @@
+<div class="builder-container">
+  <div class="builder-header">
+    <h2>{{ isEditMode ? 'Edit Bot' : 'Create New Bot' }}</h2>
+    <p>Configure your automated trading strategy</p>
+  </div>
+
+  <form [formGroup]="botForm" (ngSubmit)="onSubmit()" class="builder-form">
+    
+    <!-- General Info Section -->
+    <div class="form-section">
+      <h3>General Information</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="name">Bot Name</label>
+          <input type="text" id="name" formControlName="name" placeholder="My Trading Bot">
+        </div>
+        <div class="form-group">
+          <label for="strategyType">Strategy Type</label>
+          <select id="strategyType" formControlName="strategyType">
+            <option *ngFor="let strategy of strategies" [value]="strategy">{{strategy}}</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" formControlName="description" rows="3" placeholder="Describe your strategy..."></textarea>
+      </div>
+    </div>
+
+    <!-- Trading Parameters Section -->
+    <div class="form-section">
+      <h3>Trading Parameters</h3>
+      <div class="form-row three-col">
+        <div class="form-group">
+          <label for="tradingPair">Trading Pair</label>
+          <input type="text" id="tradingPair" formControlName="tradingPair" placeholder="EUR/USD">
+        </div>
+        <div class="form-group">
+          <label for="investmentAmount">Investment Amount ($)</label>
+          <input type="number" id="investmentAmount" formControlName="investmentAmount">
+        </div>
+        <div class="form-group">
+          <label for="maxPositionSize">Max Position Size</label>
+          <input type="number" id="maxPositionSize" formControlName="maxPositionSize">
+        </div>
+      </div>
+    </div>
+
+    <!-- Risk Management Section -->
+    <div class="form-section">
+      <h3>Risk Management</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="stopLossPercentage">Stop Loss (%)</label>
+          <input type="number" id="stopLossPercentage" formControlName="stopLossPercentage" step="0.1">
+        </div>
+        <div class="form-group">
+          <label for="takeProfitPercentage">Take Profit (%)</label>
+          <input type="number" id="takeProfitPercentage" formControlName="takeProfitPercentage" step="0.1">
+        </div>
+      </div>
+    </div>
+
+    <!-- Strategy Configuration (JSON) -->
+    <div class="form-section">
+      <h3>Strategy Configuration</h3>
+      <div class="form-group">
+        <label for="configuration">Advanced Configuration (JSON)</label>
+        <textarea id="configuration" formControlName="configuration" rows="6" class="code-input"></textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-secondary" (click)="onCancel()">Cancel</button>
+      <button type="submit" class="btn-primary" [disabled]="botForm.invalid">
+        {{ isEditMode ? 'Update Bot' : 'Create Bot' }}
+      </button>
+    </div>
+  </form>
+</div>

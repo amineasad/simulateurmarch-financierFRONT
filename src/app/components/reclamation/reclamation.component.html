@@ -1,0 +1,35 @@
+<div class="reclamation-page">
+  <div class="reclamation-box">
+
+    <div class="reclamation-title">
+      📝 Réclamation - Market Simulé
+    </div>
+
+    <textarea [(ngModel)]="texte"
+      placeholder="Décrivez votre problème ici..."></textarea>
+
+    <button class="send-btn"
+            (click)="envoyer()"
+            [disabled]="loading || !texte.trim()">
+      {{ loading ? 'Analyse...' : 'Envoyer' }}
+    </button>
+
+    <div class="loading" *ngIf="loading">
+      ⏳ Analyse en cours...
+    </div>
+
+    <div *ngIf="resultat" class="result-box">
+      <p><strong>Sentiment :</strong> {{ resultat.sentiment.sentiment }}</p>
+      <p><strong>Urgence :</strong> {{ resultat.sentiment.urgence }}</p>
+      <p><strong>Catégorie :</strong> {{ resultat.categorie.categorie }}</p>
+
+      <div class="bot-response">
+        <strong>Réponse Agent :</strong><br>
+        {{ resultat.reponse }}
+      </div>
+    </div>
+
+    <p class="error" *ngIf="error">{{ error }}</p>
+
+  </div>
+</div>

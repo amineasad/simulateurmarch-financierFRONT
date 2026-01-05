@@ -1,0 +1,81 @@
+<!-- src/app/components/signup-choice/signup-choice.component.html -->
+
+<!-- Barre d'étapes -->
+<div class="steps-bar">
+  <div class="step active">
+    <span class="step-number">1</span>
+    <span class="step-label">Informations personnelles </span>
+  </div>
+  <div class="connector"></div>
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-label">pièces justificatives</span>
+  </div>
+  <div class="connector"></div>
+  <div class="step">
+    <span class="step-number">3</span>
+    <span class="step-label">Vérification & Finalisation</span>
+  </div>
+</div>
+
+<!-- Contenu principal -->
+<div class="signup-choice-container">
+  <div class="choice-content">
+    <!-- Header -->
+    <div class="header">
+      
+      <h1 class="title">Choisissez votre profil</h1>
+      <p class="subtitle">Sélectionnez le type de compte que vous souhaitez créer</p>
+    </div>
+
+    <!-- Cartes de profil -->
+    <div class="profile-cards">
+      <!-- Étudiant -->
+      <div class="profile-card" (click)="selectProfile('student')">
+        <div class="card-icon">🎓</div>
+        <h2>Étudiant</h2>
+        <p>Compte étudiant avec avantages spéciaux</p>
+        <ul class="requirements">
+          <li>✓ Carte d'identité</li>
+          <li>✓ Carte d'étudiant</li>
+          <li>✓ Photos (face + profil)</li>
+        </ul>
+        <button class="btn-select">Choisir</button>
+      </div>
+
+      <!-- Entreprise -->
+      <div class="profile-card" (click)="selectProfile('company')">
+        <div class="card-icon">🏢</div>
+        <h2>Entreprise</h2>
+        <p>Compte professionnel pour les sociétés</p>
+        <ul class="requirements">
+          <li>✓ Informations légales</li>
+          <li>✓ Matricule fiscale</li>
+          <li>✓ Registre de commerce</li>
+        </ul>
+        <button class="btn-select">Choisir</button>
+      </div>
+
+      <!-- Particulier -->
+      <div class="profile-card" (click)="selectProfile('individual')">
+        <div class="card-icon">👤</div>
+        <h2>Particulier</h2>
+        <p>Compte personnel standard</p>
+        <ul class="requirements">
+          <li>✓ Carte d'identité</li>
+          <li>✓ Photo de visage</li>
+          <li>✓ Informations personnelles</li>
+        </ul>
+        <button class="btn-select">Choisir</button>
+      </div>
+    </div>
+
+    <!-- Lien vers connexion -->
+    <div class="login-link">
+      <p>
+        Vous avez déjà un compte ?
+        <a (click)="goToLogin()">Se connecter</a>
+      </p>
+    </div>
+  </div>
+</div>

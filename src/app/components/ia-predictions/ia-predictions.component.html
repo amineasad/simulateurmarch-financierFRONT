@@ -1,0 +1,73 @@
+<div class="ia-predictions-container">
+  <!-- Bandeau / titre -->
+  <div class="ia-header-card">
+    <div class="ia-header-left">
+      <div class="ia-chip">IA</div>
+      <div>
+        <h1>Prédictions boursières – 5 prochains jours</h1>
+        <p>
+          Modèle LSTM entraîné sur les 2 dernières années pour chaque actif.
+          Utile pour tester la lecture des signaux dans ta salle de trading TRADIX.
+        </p>
+      </div>
+    </div>
+
+    <div class="ia-header-right">
+      <button class="btn-soft" (click)="loadPredictions()" [disabled]="isLoading">
+        🔄 {{ isLoading ? 'Chargement...' : 'Rafraîchir' }}
+      </button>
+      <div class="last-update" *ngIf="data">
+        Dernière mise à jour : <strong>{{ data.update_date }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message d’erreur -->
+  <div class="ia-error-card" *ngIf="errorMessage">
+    <span>⚠️ {{ errorMessage }}</span>
+  </div>
+
+  <!-- Loader -->
+  <div class="ia-loading" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Calcul des prédictions IA pour tous les actifs...</p>
+  </div>
+
+  <!-- Tableau principal -->
+  <div class="ia-table-card" *ngIf="!isLoading && data">
+    <div class="ia-table-wrapper">
+      <table class="ia-table">
+        <thead>
+          <tr>
+            <th>Actif</th>
+            <th *ngFor="let d of data.future_dates">{{ d }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let pred of data.predictions">
+            <td class="ticker-cell">
+              <div class="ticker-symbol">{{ pred.ticker }}</div>
+              <div class="ticker-status" *ngIf="hasError(pred)">⚠️ Erreur</div>
+            </td>
+
+            <!-- Si erreur pour cet actif -->
+            <td class="error-cell" colspan="5" *ngIf="hasError(pred)">
+              {{ pred.error }}
+            </td>
+
+            <!-- Sinon, afficher les prix -->
+            <ng-container *ngIf="!hasError(pred)">
+              <td *ngFor="let price of pred.predictions">
+                {{ price | number:'1.2-2' }} $
+              </td>
+            </ng-container>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="ia-legend">
+      <p>💡 Ces valeurs sont expérimentalement générées par IA. Ce n’est pas un conseil d’investissement.</p>
+    </div>
+  </div>
+</div>

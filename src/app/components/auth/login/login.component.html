@@ -1,0 +1,124 @@
+<!-- src/app/components/auth/login/login.component.html -->
+
+<div class="auth-container">
+  
+  <!-- Background animé -->
+  <div class="auth-background">
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+    <div class="gradient-orb orb-3"></div>
+  </div>
+
+  <!-- Card de login -->
+  <div class="auth-card">
+    
+    <!-- Header -->
+    <div class="auth-header">
+      <div class="logo">
+        <span class="logo-icon"></span>
+        <span class="logo-text">TRADIX</span>
+      </div>
+      <h1 class="auth-title">Connexion</h1>
+      <p class="auth-subtitle">Accédez à votre salle de marché virtuelle</p>
+    </div>
+
+    <!-- Formulaire -->
+    <form class="auth-form" (ngSubmit)="onLogin()">
+      
+      <!-- Email -->
+      <div class="form-group">
+        <label class="form-label">
+          <span class="label-icon"></span>
+          Email
+        </label>
+        <input 
+          type="email" 
+          [(ngModel)]="loginForm.email"
+          name="email"
+          class="form-input"
+          placeholder="votre@email.com"
+          required>
+      </div>
+
+      <!-- Mot de passe -->
+      <div class="form-group">
+        <label class="form-label">
+          <span class="label-icon"></span>
+          Mot de passe
+        </label>
+        <input 
+          type="password" 
+          [(ngModel)]="loginForm.password"
+          name="password"
+          class="form-input"
+          placeholder="••••••••"
+          required>
+      </div>
+
+      <!-- Options -->
+      <div class="form-options">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe">
+          <span class="checkbox-text">Se souvenir de moi</span>
+        </label>
+        <a href="#" class="link-text">Mot de passe oublié ?</a>
+      </div>
+
+      <!-- Message d'erreur -->
+      <div class="error-message" *ngIf="errorMessage">
+        <span class="error-icon"></span>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Bouton de connexion -->
+      <button 
+        type="submit" 
+        class="btn-submit"
+        [disabled]="isLoading">
+        <span *ngIf="!isLoading">Se connecter</span>
+        <span *ngIf="isLoading" class="loading-spinner"> Connexion...</span>
+      </button>
+
+    </form>
+
+    <!-- Séparateur -->
+    <div class="divider">
+      <span class="divider-text">OU</span>
+    </div>
+
+    <!-- Lien vers inscription -->
+    <div class="auth-footer">
+      <p class="footer-text">
+        Pas encore de compte ?
+        <a routerLink="/register" class="link-primary">Créer un compte</a>
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Info panel -->
+  <div class="info-panel">
+    <div class="info-item">
+      <div class="info-icon"></div>
+      <div class="info-content">
+        <h3>Trading en temps réel</h3>
+        <p>Simulez des transactions sur les marchés financiers</p>
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-icon"></div>
+      <div class="info-content">
+        <h3>Analyse avancée</h3>
+        <p>Graphiques et outils d'analyse professionnels</p>
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-icon"></div>
+      <div class="info-content">
+        <h3>Salle multijoueur</h3>
+        <p>Tradez avec d'autres utilisateurs en temps réel</p>
+      </div>
+    </div>
+  </div>
+
+</div>

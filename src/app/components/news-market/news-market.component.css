@@ -1,0 +1,396 @@
+/* 🔥 NEWS MARKET IA INTELLIGENTE - FULLSCREEN */
+.news-market-container {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  background: #1a1a2e;
+  color: white;
+  font-family: 'Arial', sans-serif;
+  overflow-x: hidden;
+}
+
+/* HEADER */
+.news-header {
+  text-align: center;
+  padding: 20px 20px;
+  border-bottom: 1px solid #00d4ff;
+  margin: 0;
+}
+
+.news-header h1 {
+  color: #00d4ff;
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.news-stats {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+  padding: 0 20px;
+}
+
+.stat {
+  background: #0f0f23;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  font-size: 0.85rem;
+  color: #00d4ff;
+}
+
+.stat.bullish { border-color: #00ff88; color: #00ff88; }
+.stat.bearish { border-color: #ff4d4d; color: #ff4d4d; }
+.stat.high { border-color: #ffd700; color: #ffd700; }
+.stat.live { border-color: #ffaa00; color: #ffaa00; }
+
+/* FILTRES */
+.news-filters {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  padding: 15px 20px;
+  flex-wrap: wrap;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.filter-btn {
+  padding: 8px 12px;
+  background: #0f0f23;
+  border: 1px solid #333;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.filter-btn.active, .filter-btn:hover {
+  background: #00d4ff;
+  color: black;
+  border-color: #00d4ff;
+  transform: scale(1.05);
+}
+
+/* GRID NEWS */
+.news-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 0;
+  padding: 0 20px 20px 20px;
+  height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+/* CARTES NEWS */
+.news-card {
+  background: #0f0f23;
+  border-radius: 8px;
+  padding: 20px;
+  border-left: 4px solid #00d4ff;
+  margin-bottom: 15px;
+  transition: all 0.2s;
+}
+
+.news-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+}
+
+.news-card.bullish { border-left-color: #00ff88; }
+.news-card.bearish { border-left-color: #ff4d4d; }
+.news-card.high-impact { border-left-color: #ffd700; }
+.news-card.live { border-left-color: #ffaa00; }
+
+/* HEADER CARTE */
+.news-header-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.sentiment-impact {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sentiment, .impact, .category {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.sentiment { min-width: 50px; text-align: center; }
+.sentiment.bullish { background: #00ff88; color: black; }
+.sentiment.bearish { background: #ff4d4d; color: white; }
+.sentiment.neutral { background: #ffd700; color: black; }
+
+.impact.high { background: #ff4444; color: white; }
+.impact.medium { background: #ffaa00; color: black; }
+.impact.low { background: #00d4ff; color: white; }
+
+.category.live { background: #ffaa00; color: black; }
+.category.financial { background: #00ff88; color: black; }
+.category.geopolitical { background: #ff4d4d; color: white; }
+.category.political { background: #ffd700; color: black; }
+
+.source {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+/* TITRE + RÉSUMÉ */
+.news-title {
+  color: white;
+  font-size: 1.1rem;
+  margin: 10px 0 8px 0;
+  font-weight: bold;
+  line-height: 1.3;
+}
+
+.news-summary {
+  color: #ccc;
+  line-height: 1.4;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+}
+
+/* 🔥 IA RECOMMANDATIONS INTELLIGENTES */
+.ia-recommendations {
+  margin: 10px 0;
+  padding: 10px;
+  background: rgba(0, 255, 136, 0.1);
+  border-radius: 6px;
+  border-left: 4px solid #00ff88;
+  border-top: 1px solid #00ff88;
+}
+
+.ia-recommendations strong {
+  color: #00ff88;
+  margin-right: 10px;
+  font-size: 0.9rem;
+}
+
+.reco-tag {
+  display: inline-block;
+  margin: 2px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: white;
+  transition: all 0.2s;
+}
+
+.reco-tag.achat {
+  background: #00ff88;
+  color: black;
+  box-shadow: 0 2px 4px rgba(0, 255, 136, 0.3);
+}
+
+.reco-tag.vente {
+  background: #ff4d4d;
+  color: white;
+  box-shadow: 0 2px 4px rgba(255, 77, 77, 0.3);
+}
+
+.reco-tag.neutre {
+  background: #ffd700;
+  color: black;
+  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+}
+
+.reco-tag:hover {
+  transform: scale(1.05);
+}
+
+/* FOOTER CARTE */
+.news-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid #333;
+}
+
+.news-date {
+  color: #888;
+  font-size: 0.75rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.advice-btn {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.advice-btn.buy { background: #00ff88; color: black; }
+.advice-btn.sell { background: #ff4d4d; color: white; }
+
+.advice-btn:hover {
+  transform: scale(1.05);
+}
+
+.advice-btn .icon {
+  margin-right: 5px;
+  font-size: 1rem;
+}
+
+.read-more-btn {
+  background: #00d4ff;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.read-more-btn:hover {
+  background: #0099cc;
+  transform: scale(1.05);
+}
+
+/* ALERTES FIXÉES BAS */
+.trading-alerts-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #0f0f23;
+  border-top: 2px solid #00ff88;
+  padding: 15px 20px;
+  z-index: 1000;
+}
+
+.trading-alerts-panel h3 {
+  color: #00ff88;
+  margin: 0 0 10px 0;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.alert-list {
+  max-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.alert-item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-left: 3px solid;
+  font-size: 0.8rem;
+  flex: 1;
+  min-width: 200px;
+  transition: all 0.2s;
+}
+
+.alert-item.buy { 
+  background: #00ff88; 
+  color: black; 
+  border-left-color: #00ff88; 
+}
+
+.alert-item.sell { 
+  background: #ff4d4d; 
+  color: white; 
+  border-left-color: #ff4d4d; 
+}
+
+.alert-item:hover {
+  transform: scale(1.02);
+}
+
+.alert-icon { 
+  font-size: 1.2rem; 
+  min-width: 20px; 
+}
+
+.alert-text { 
+  font-weight: bold; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  white-space: nowrap; 
+}
+
+.alert-text strong {
+  font-size: 0.75rem;
+  margin-left: 5px;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.alert-text strong.achat { 
+  background: rgba(0, 255, 136, 0.3); 
+  color: black; 
+}
+
+.alert-text strong.vente { 
+  background: rgba(255, 77, 77, 0.3); 
+  color: white; 
+}
+
+.alert-text strong.neutre { 
+  background: rgba(255, 215, 0, 0.3); 
+  color: black; 
+}
+
+/* LOADING */
+.loading {
+  text-align: center;
+  padding: 100px 20px;
+  color: #00d4ff;
+}
+
+.loading h2 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .news-header h1 { font-size: 2rem; }
+  .news-stats { gap: 8px; padding: 0 10px; }
+  .filter-btn { padding: 6px 8px; font-size: 0.75rem; }
+  .news-card { padding: 15px; margin-bottom: 10px; }
+  .news-title { font-size: 1rem; }
+  .news-summary { font-size: 0.85rem; }
+  .news-grid { padding: 0 10px 20px 10px; }
+  .trading-alerts-panel { padding: 10px; }
+  .alert-item { font-size: 0.75rem; padding: 6px; min-width: 150px; }
+  .reco-tag { font-size: 0.75rem; padding: 4px 6px; }
+  .alert-list { gap: 5px; }
+}
+
+@media (max-width: 480px) {
+  .news-header h1 { font-size: 1.5rem; }
+  .news-stats { flex-direction: column; gap: 5px; }
+  .filter-btn { padding: 5px 6px; font-size: 0.7rem; }
+  .action-buttons { flex-direction: column; }
+  .advice-btn, .read-more-btn { width: 100%; justify-content: center; }
+}

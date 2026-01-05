@@ -1,0 +1,224 @@
+<!-- src/app/components/lobby/lobby.component.html -->
+
+<div class="lobby-container">
+  
+  <!-- Header -->
+  <div class="lobby-header">
+    <div class="header-left">
+      <h1 class="title">🎮 Salle de Jeu</h1>
+      <p class="subtitle">Rejoignez ou créez une session de trading</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-bots" (click)="goToBots()">
+        🤖 Mes Bots
+      </button>
+      <button class="btn-create" (click)="openCreateModal()">
+        ➕ Créer une Session
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="filters">
+    <div class="filter-group">
+      <label>Statut</label>
+      <select [(ngModel)]="filterStatus" (change)="filterSessions()" class="filter-select">
+        <option value="all">Toutes</option>
+        <option value="waiting">En attente</option>
+        <option value="open">En cours</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Recherche par code</label>
+      <input 
+        type="text" 
+        [(ngModel)]="searchCode" 
+        (input)="filterSessions()"
+        placeholder="GAME-XXXXXX"
+        class="filter-input">
+      <button class="btn-search" (click)="joinByCode()">
+        🔍 Rejoindre
+      </button>
+    </div>
+
+    <div class="filter-group">
+      <button class="btn-refresh" (click)="loadSessions()">
+        🔄 Rafraîchir
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="loading">
+    <div class="spinner"></div>
+    <p>Chargement des sessions...</p>
+  </div>
+
+  <!-- Liste des sessions -->
+  <div *ngIf="!isLoading" class="sessions-grid">
+    
+    <div *ngIf="filteredSessions.length === 0" class="empty-state">
+      <p>🔍 Aucune session disponible</p>
+      <button class="btn-create" (click)="openCreateModal()">
+        Créer la première session
+      </button>
+    </div>
+
+    <div *ngFor="let session of filteredSessions" class="session-card">
+      
+      <!-- Header de la carte -->
+      <div class="card-header">
+        <div class="session-title">
+          <h3>{{ session.nom }}</h3>
+          <span class="session-code">{{ session.codeAcces }}</span>
+        </div>
+        <span class="status-badge" [ngClass]="getStatusColor(session.status)">
+          {{ getStatusBadge(session.status) }}
+        </span>
+      </div>
+
+      <!-- Description -->
+      <p class="session-description" *ngIf="session.description">
+        {{ session.description }}
+      </p>
+
+      <!-- Informations -->
+      <div class="session-info">
+        <div class="info-item">
+          <span class="icon">👥</span>
+          <span class="label">Max participants:</span>
+          <span class="value">{{ session.maxParticipants }}</span>
+        </div>
+
+        <div class="info-item">
+          <span class="icon">⏱️</span>
+          <span class="label">Durée:</span>
+          <span class="value">{{ session.dureeMinutes }} min</span>
+        </div>
+
+        <div class="info-item">
+          <span class="icon">💰</span>
+          <span class="label">Cash initial:</span>
+          <span class="value">{{ session.cashInitial | number:'1.0-0' }}€</span>
+        </div>
+
+        <div class="info-item">
+          <span class="icon">📅</span>
+          <span class="label">Début:</span>
+          <span class="value">{{ formatDate(session.heureDebut) }}</span>
+        </div>
+
+        <div class="info-item" *ngIf="session.modeAccelere">
+          <span class="icon">⚡</span>
+          <span class="label">Mode accéléré</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="card-actions">
+       <button class="btn-primary" (click)="joinSession(session)">
+  🎮 Mode Live
+</button>
+
+<!-- Bouton Replay -->
+<button class="btn-secondary" (click)="joinSessionReplay(session)">
+  📼 Mode Replay
+</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal de création -->
+<div *ngIf="showCreateModal" class="modal-overlay" (click)="closeCreateModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    
+    <div class="modal-header">
+      <h2>Créer une Session</h2>
+      <button class="btn-close" (click)="closeCreateModal()">✖</button>
+    </div>
+
+    <div class="modal-body">
+      
+      <div class="form-group">
+        <label>Nom de la session *</label>
+        <input 
+          type="text" 
+          [(ngModel)]="newSession.nom" 
+          placeholder="Ex: Trading pour débutants"
+          class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea 
+          [(ngModel)]="newSession.description" 
+          placeholder="Description de la session..."
+          class="form-textarea"
+          rows="3"></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Durée (minutes) *</label>
+          <input 
+            type="number" 
+            [(ngModel)]="newSession.dureeMinutes" 
+            min="5"
+            max="480"
+            class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label>Participants max *</label>
+          <input 
+            type="number" 
+            [(ngModel)]="newSession.maxParticipants" 
+            min="2"
+            max="50"
+            class="form-input">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Cash initial (€) *</label>
+        <input 
+          type="number" 
+          [(ngModel)]="newSession.cashInitial" 
+          min="10000"
+          step="10000"
+          class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label>Heure de début *</label>
+        <input 
+          type="datetime-local" 
+          [(ngModel)]="newSession.heureDebut" 
+          class="form-input">
+      </div>
+
+      <div class="form-group checkbox-group">
+        <input 
+          type="checkbox" 
+          id="modeAccelere"
+          [(ngModel)]="newSession.modeAccelere">
+        <label for="modeAccelere">Mode temps accéléré</label>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="closeCreateModal()">
+        Annuler
+      </button>
+      <button class="btn-confirm" (click)="createSession()">
+        Créer
+      </button>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,215 @@
+<div class="trading-cockpit">
+  <!-- TOP BAR PHASE 2 -->
+  <div class="top-bar">
+    <div class="logo-neon">🚀 TRADING COCKPIT 2.0 PRO</div>
+    <div class="top-stats">
+      <div class="stat-card"><span class="icon">📈</span>{{ getCurrentCount() }} ITEMS</div>
+      <div class="stat-card"><span class="icon">⚡</span>{{ updateCount }}/min</div>
+      <div class="stat-card"><span class="icon">💰</span>P&L +{{ pnlPercent | number:'1.1-1' }}%</div>
+      <button class="theme-toggle" (click)="toggleTheme()">🌙</button>
+    </div>
+  </div>
+
+  <!-- PORTFOLIO PANEL PHASE 2 -->
+  <div class="portfolio-panel">
+    <div class="pnl-display">
+      <span class="pnl-profit">+${{ totalPnL | number:'1.0-0' }}</span>
+      <span class="cash-display">Cash: ${{ cash | number:'1.0-0' }}</span>
+    </div>
+    <div class="positions-mini">
+      {{ portfolio.length }} POSITIONS | TOP: {{ portfolio[0]?.symbol || 'N/A' }}
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls-panel">
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input [(ngModel)]="searchTerm" placeholder="Rechercher..." />
+    </div>
+    <div class="neon-tabs">
+      <button class="tab" [class.active]="activeTab === 'stocks'" (click)="activeTab = 'stocks'">
+        📈 ACTIONS ({{ stockPrices.length }})
+      </button>
+      <button class="tab" [class.active]="activeTab === 'forex'" (click)="activeTab = 'forex'">
+        💱 DEVISES ({{ forexRates.length }})
+      </button>
+      <button class="tab" [class.active]="activeTab === 'metals'" (click)="activeTab = 'metals'">
+        🪙 MÉTAUX ({{ metals.length }})
+      </button>
+      <button class="tab" [class.active]="activeTab === 'etf-bond'" (click)="activeTab = 'etf-bond'">
+        🏦 ETF ({{ etfBonds.length }})
+      </button>
+    </div>
+  </div>
+
+  <!-- TOP 5 GAGNANTS/PERDANTS PHASE 2 -->
+  <div class="top-lists" *ngIf="activeTab === 'stocks'">
+    <div class="top-gainers">
+      <h4>🚀 TOP 5 GAGNANTS</h4>
+      <span *ngFor="let gainer of topGainers">{{ gainer.symbol }} +{{ gainer.change | number:'1.1-1' }}% </span>
+    </div>
+    <div class="top-losers">
+      <h4>💥 TOP 5 PERDANTS</h4>
+      <span *ngFor="let loser of topLosers">{{ loser.symbol }} {{ loser.change | number:'1.1-1' }}% </span>
+    </div>
+  </div>
+
+  <!-- TABLEAU ACTIONS : 4 BOUTONS COMPLET -->
+  <div class="heatmap-container" *ngIf="activeTab === 'stocks'">
+    <table class="heatmap-table">
+      <thead>
+        <tr>
+          <th>SYMBOLE</th>
+          <th>PRIX</th>
+          <th>CHANGE</th>
+          <th>VOLUME</th>
+          <th>RSI</th>
+          <th>ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let stock of paginatedStocks" 
+            class="heatmap-row" 
+            [class.strong-buy]="stock.change > 5"
+            [class.buy]="stock.change > 0"
+            [class.sell]="stock.change < 0"
+            [class.strong-sell]="stock.change < -5"
+            [class.top-gainer]="topGainers[0] && topGainers[0].symbol === stock.symbol"
+            [class.top-loser]="topLosers[0] && topLosers[0].symbol === stock.symbol"
+            (click)="toggleFavorite(stock.symbol)"
+            (mouseenter)="showTooltip(stock.symbol, $event)"
+            (mouseleave)="hideTooltip()">
+          <td class="symbol">
+            {{ stock.symbol }}
+            <span class="star-indicator" *ngIf="isFavorite(stock.symbol)">★</span>
+          </td>
+          <td class="price">${{ stock.price | number:'1.2-2' }}</td>
+          <td class="change">
+            <span [class.up]="stock.change > 0" [class.down]="stock.change < 0">
+              {{ stock.change | number:'1.1-1' }}<span class="arrow">{{ stock.change > 0 ? '↑' : '↓' }}</span>
+            </span>
+          </td>
+          <td class="volume">{{ (stock.volume/1000000) | number:'1.1-1' }}M</td>
+          <td class="rsi">{{ stock.rsi | number:'1.0-0' }}</td>
+          <td class="trading-actions">
+            <button class="buy-btn" (click)="buyStock(stock); $event.stopPropagation()">ACHAT</button>
+            <button class="sell-btn" (click)="sellStock(stock); $event.stopPropagation()">VENTE</button>
+            <button class="chart-btn" (click)="showChartModal(stock.symbol); $event.stopPropagation()">📈</button>
+            <button class="detail-btn" (click)="goToDetails(stock.symbol); $event.stopPropagation()">DÉTAILS</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- DEVISES TABLE -->
+  <div class="heatmap-container" *ngIf="activeTab === 'forex'">
+    <table class="heatmap-table">
+      <thead><tr><th>PAIRE</th><th>TAUX</th><th>CHANGE</th><th>ACTIONS</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let forex of paginatedForex" class="heatmap-row">
+          <td>{{ forex.from }}/{{ forex.to }}</td>
+          <td>{{ forex.rate | number:'1.4-4' }}</td>
+          <td class="change">
+            <span [class.up]="forex.change > 0" [class.down]="forex.change < 0">
+              {{ (forex.change*10000) | number:'1.1-1' }} pips {{ forex.change > 0 ? '↑' : '↓' }}
+            </span>
+          </td>
+          <td><button class="detail-btn" (click)="goToForexDetails(forex.from, forex.to)">DÉTAILS</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MÉTAUX -->
+  <div class="heatmap-container" *ngIf="activeTab === 'metals'">
+    <table class="heatmap-table">
+      <thead><tr><th>MÉTAL</th><th>PRIX</th><th>CHANGE</th><th>VOLUME</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let metal of paginatedMetals" class="heatmap-row">
+          <td>{{ metal.symbol }}</td>
+          <td>${{ metal.price | number:'1.0-0' }}</td>
+          <td class="change">{{ metal.change | number:'1.1-1' }}{{ metal.change > 0 ? '↑' : '↓' }}</td>
+          <td>{{ (metal.volume/1000) | number:'1.1-1' }}K</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ETF -->
+  <div class="heatmap-container" *ngIf="activeTab === 'etf-bond'">
+    <table class="heatmap-table">
+      <thead><tr><th>ETF</th><th>PRIX</th><th>CHANGE</th><th>VOLUME</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let etf of paginatedETFBonds" class="heatmap-row">
+          <td>{{ etf.symbol }}</td>
+          <td>${{ etf.price | number:'1.2-2' }}</td>
+          <td class="change">{{ etf.change | number:'1.1-1' }}{{ etf.change > 0 ? '↑' : '↓' }}</td>
+          <td>{{ (etf.volume/1000000) | number:'1.1-1' }}M</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGINATION -->
+  <div class="pagination-neon" *ngIf="totalPages > 1">
+    <button class="page-btn" (click)="prevPage()" [disabled]="currentPage === 1">⬅️ PRÉC</button>
+    <div class="page-numbers">
+      <button *ngFor="let page of [].constructor(totalPages); let i = index" 
+              class="page-number" 
+              [class.active]="currentPage === i + 1"
+              (click)="currentPage = i + 1">
+        {{ i + 1 }}
+      </button>
+    </div>
+    <button class="page-btn" (click)="nextPage()" [disabled]="currentPage === totalPages">SUIV ➡️</button>
+    <div class="page-info">{{ getCurrentTabName() }} - Page {{ currentPage }}/{{ totalPages }}</div>
+  </div>
+
+  <!-- CHART MODAL PHASE 2 -->
+  <div class="chart-modal" *ngIf="showChart">
+    <div class="modal-header">
+      <h3>📈 {{ selectedSymbol }} - {{ currentTimeframe.toUpperCase() }}</h3>
+      <button class="close-btn" (click)="closeChart()">✕</button>
+    </div>
+    <canvas id="tradingChart" width="800" height="400"></canvas>
+    <div class="timeframes">
+      <button [class.active]="currentTimeframe === '1m'" (click)="changeTimeframe('1m')">1M</button>
+      <button [class.active]="currentTimeframe === '5m'" (click)="changeTimeframe('5m')">5M</button>
+      <button [class.active]="currentTimeframe === '15m'" (click)="changeTimeframe('15m')">15M</button>
+      <button [class.active]="currentTimeframe === '1h'" (click)="changeTimeframe('1h')">1H</button>
+    </div>
+  </div>
+
+  <!-- TOOLTIP -->
+  <div class="tooltip" *ngIf="showTooltipData" [style.left.px]="tooltipX" [style.top.px]="tooltipY">
+    <div><strong>{{ showTooltipData.symbol }}</strong></div>
+    <div>📊 Prix: ${{ showTooltipData.chartData[showTooltipData.chartData.length-1] | number:'1.2-2' }}</div>
+    <div>📈 RSI: {{ showTooltipData.rsi | number:'1.0-0' }}</div>
+    <div>⭐ {{ isFavorite(showTooltipData.symbol) ? 'FAVORI' : 'Cliquez ★' }}</div>
+  </div>
+
+  <!-- 6 NOTIFICATIONS PHASE 2 -->
+  <div class="notifications">
+    <div *ngFor="let notif of notifications" 
+         class="notification" 
+         [class.super-buy]="notif.type === 'super-buy'"
+         [class.volume-explosion]="notif.type === 'volume-explosion'"
+         [class.buy]="notif.type === 'buy'"
+         [class.sell]="notif.type === 'sell'"
+         [class.breakout]="notif.type === 'breakout'"
+         [class.favorite]="notif.type === 'favorite'">
+      {{ notif.message }}
+    </div>
+  </div>
+
+  <!-- TICKER -->
+  <div class="live-ticker">
+    <div class="ticker-content">
+      <span *ngFor="let item of getTickerItems()">
+        {{ item.symbol }} ${{ item.price | number:'1.0-0' }}{{ item.change > 0 ? '↑' : '↓' }}
+      </span>
+    </div>
+  </div>
+</div>

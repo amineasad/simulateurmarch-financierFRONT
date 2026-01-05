@@ -1,0 +1,271 @@
+<!-- src/app/components/trading-room/trading-room.component.html -->
+
+<div class="trading-room">
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="navbar-left">
+  <div class="navbar-logo"> TRADIX</div>
+
+  <nav class="navbar-links">
+    <a (click)="goToLobby()"> Salle de jeu</a>
+    <a (click)="goToDetails()"> Infos</a>
+    <a (click)="goToIaPredictions()"> IA – Prédictions 5 jours</a>
+    <a (click)="goToEducation()"> Apprendre</a>
+    <a (click)="goToForum()"> Forum</a>
+    <a (click)="goToReclamation()"> Reclamation</a>
+  </nav>
+</div>
+    
+    <div class="top-bar-right">
+      <div class="time-info">
+        <span class="icon"></span>
+        <span class="time">{{ currentTime | date:'HH:mm:ss' }}</span>
+        <span class="separator">|</span>
+        <span class="market-status" [class.open]="isConnected">
+          {{ isConnected ? 'MARCHÉ OUVERT' : 'MARCHÉ FERMÉ' }}
+        </span>
+      </div>
+      <div class="info-item latency">
+        <span class="icon">📡</span>
+        <span>Latency: {{ latency }}ms</span>
+      </div>
+      <div class="info-item user">
+        <span class="label">User:</span>
+        <span class="username">{{ username }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    
+    <!-- LEFT PANEL - Watchlist -->
+    <div class="left-panel">
+      <div class="panel-header">WATCHLIST</div>
+
+      <!-- Bandeau de catégories -->
+      <div class="market-tabs">
+        <button class="tab" 
+                [class.active]="selectedCategory==='STOCKS'" 
+                (click)="changeCategory('STOCKS')">
+          📈 ACTIONS
+        </button>
+        <button class="tab" 
+                [class.active]="selectedCategory==='FOREX'" 
+                (click)="changeCategory('FOREX')">
+          💱 DEVISES
+        </button>
+        <button class="tab" 
+                [class.active]="selectedCategory==='METALS'" 
+                (click)="changeCategory('METALS')">
+          🪙 MÉTAUX
+        </button>
+        <button class="tab" 
+                [class.active]="selectedCategory==='ETFS'" 
+                (click)="changeCategory('ETFS')">
+          🏛️ ETF
+        </button>
+      </div>
+
+      <div class="asset-list">
+        <div *ngFor="let asset of assets" 
+             class="asset-item"
+             [class.selected]="asset.symbol === selectedSymbol"
+             (click)="selectAsset(asset.symbol)">
+          <div class="asset-info">
+            <div class="asset-symbol">{{ asset.symbol }}</div>
+            <div class="asset-name">{{ asset.name }}</div>
+          </div>
+          <div class="asset-price">
+            <div class="price">{{ asset.price | number:'1.2-2' }}€</div>
+            <div class="change" [class.positive]="asset.change >= 0" [class.negative]="asset.change < 0">
+              <span class="icon">{{ asset.change >= 0 ? '▲' : '▼' }}</span>
+              {{ asset.change >= 0 ? '+' : '' }}{{ asset.change | number:'1.2-2' }}%
+            </div>
+          </div>
+          <div class="asset-details">
+            <span>Vol: {{ asset.volume }}</span>
+            <span class="spread">{{ asset.bid }}/{{ asset.ask }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER PANEL - Main Trading Area -->
+    <div class="center-panel">
+      
+      <!-- Asset Header -->
+      <div class="asset-header" *ngIf="selectedAsset">
+        <div class="header-left">
+          <div class="header-title">
+            <span class="symbol">{{ selectedAsset.symbol }}</span>
+            <span class="name">{{ selectedAsset.name }}</span>
+          </div>
+          <div class="header-price">
+            <span class="price">{{ selectedAsset.price | number:'1.2-2' }}€</span>
+            <span class="change" [class.positive]="selectedAsset.change >= 0" [class.negative]="selectedAsset.change < 0">
+              <span class="icon">{{ selectedAsset.change >= 0 ? '▲' : '▼' }}</span>
+              {{ selectedAsset.change >= 0 ? '+' : '' }}{{ selectedAsset.change | number:'1.2-2' }}%
+            </span>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="stat-item">
+            <div class="stat-label">BID</div>
+            <div class="stat-value bid">{{ selectedAsset.bid }}</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">ASK</div>
+            <div class="stat-value ask">{{ selectedAsset.ask }}</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">VOLUME</div>
+            <div class="stat-value">{{ selectedAsset.volume }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart Area -->
+      <div class="chart-area">
+        <app-price-chart [symbol]="selectedSymbol"></app-price-chart>
+      </div>
+
+      <!-- ✅ CARNET D'ORDRES RÉEL (CÔTE À CÔTE) -->
+      <div class="order-book">
+        <div class="order-book-header">
+           CARNET D'ORDRES
+          <span class="symbol-badge">{{ selectedSymbol }}</span>
+          <span class="last-price" *ngIf="currentOrderBook">
+            Last: {{ currentOrderBook.lastPrice | number:'1.2-5' }}€
+          </span>
+        </div>
+        
+        <div class="order-book-content" *ngIf="currentOrderBook; else noOrderBook">
+          
+          <!-- Colonne des BIDs (Achat - GAUCHE) -->
+          <div class="order-book-side bids-side">
+            <div class="order-book-titles">
+              <span class="title-label">PRIX (BID)</span>
+              <span class="title-label">QUANTITÉ</span>
+            </div>
+            
+            <div class="order-book-scrollable">
+              <div class="order-entry bid" *ngFor="let bid of currentOrderBook.bids">
+                <span class="price bid-price">{{ bid.price | number:'1.2-5' }}</span>
+                <span class="quantity">{{ bid.quantity | number:'1.0-0' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Colonne des ASKs (Vente - DROITE) -->
+          <div class="order-book-side asks-side">
+            <div class="order-book-titles">
+              <span class="title-label">PRIX (ASK)</span>
+              <span class="title-label">QUANTITÉ</span>
+            </div>
+            
+            <div class="order-book-scrollable">
+              <div class="order-entry ask" *ngFor="let ask of currentOrderBook.asks">
+                <span class="price ask-price">{{ ask.price | number:'1.2-5' }}</span>
+                <span class="quantity">{{ ask.quantity | number:'1.0-0' }}</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Message si pas de carnet disponible -->
+        <ng-template #noOrderBook>
+          <div class="no-orderbook">
+            <div class="loading-spinner">⏳</div>
+            <p>Chargement du carnet d'ordres...</p>
+          </div>
+        </ng-template>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL - Navigation simplifiée -->
+    <div class="right-panel">
+      
+      <!-- Résumé Portefeuille -->
+      <div class="portfolio-summary-section">
+        <div class="section-header portfolio-header">
+          <span> PORTEFEUILLE</span>
+          <span class="pnl" [class.positive]="totalPnL >= 0" [class.negative]="totalPnL < 0">
+            {{ totalPnL >= 0 ? '+' : '' }}{{ totalPnL | number:'1.2-2' }}€
+          </span>
+        </div>
+
+        <div class="summary-stats">
+          <div class="stat-item">
+            <span class="label">Valeur totale</span>
+            <span class="value">{{ totalPortfolioValue | number:'1.2-2' }}€</span>
+          </div>
+          <div class="stat-item">
+            <span class="label">Cash disponible</span>
+            <span class="value cash">{{ cash | number:'1.2-2' }}€</span>
+          </div>
+        </div>
+
+        <!-- Boutons de navigation -->
+        <div class="action-buttons">
+          <button class="nav-btn btn-order" (click)="goToOrders()">
+             Passer un ordre
+          </button>
+          <button class="nav-btn btn-portfolio" (click)="goToPortfolio()">
+             Voir détails
+          </button>
+          <button class="nav-btn btn-wallet" (click)="goToWallet()">
+             Gérer portefeuille
+          </button>
+        </div>
+      </div>
+
+      <!-- Positions (aperçu élargi) -->
+      <div class="positions-preview-section">
+        <div class="section-header">
+           POSITIONS
+        </div>
+
+        <div class="positions-preview-list">
+          <div class="position-preview-item" *ngFor="let position of portfolio">
+            <div class="position-info">
+              <span class="symbol">{{ position.symbol }}</span>
+              <span class="quantity">{{ position.quantity }} actions</span>
+            </div>
+            <div class="position-pnl" 
+                 [class.positive]="getPositionPnL(position) >= 0"
+                 [class.negative]="getPositionPnL(position) < 0">
+              {{ getPositionPnL(position) >= 0 ? '+' : '' }}{{ getPositionPnL(position) | number:'1.2-2' }}€
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- BOTTOM STATUS BAR -->
+  <div class="bottom-bar">
+    <div class="bottom-left">
+      <span class="status-item">
+        Session: <span class="value">PROD-{{ currentTime | date:'yyyy-MM-dd' }}</span>
+      </span>
+      <span class="status-item">
+        Ordres aujourd'hui: <span class="value highlight">{{ ordersToday }}</span>
+      </span>
+      <span class="status-item">
+        Volume: <span class="value">{{ volumeToday | number:'1.0-0' }}€</span>
+      </span>
+    </div>
+    <div class="bottom-right">
+      <div class="connection-status" [class.connected]="isConnected">
+        <div class="status-dot"></div>
+        <span>{{ isConnected ? 'Connecté au marché' : 'Déconnecté' }}</span>
+      </div>
+    </div>
+  </div>
+<app-reclamation-chat></app-reclamation-chat>
+</div>

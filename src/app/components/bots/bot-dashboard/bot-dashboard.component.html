@@ -1,0 +1,70 @@
+<div class="dashboard-container">
+  <div class="header">
+    <div class="title-section">
+      <h2>My Trading Bots</h2>
+      <p>Manage and monitor your automated strategies</p>
+    </div>
+    <div class="actions">
+      <button class="btn-secondary" (click)="browseMarketplace()">Browse Marketplace</button>
+      <button class="btn-primary" (click)="createBot()">Create New Bot</button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <h3>Total Bots</h3>
+      <div class="value">{{totalBots}}</div>
+    </div>
+    <div class="stat-card">
+      <h3>Active</h3>
+      <div class="value active">{{activeBots}}</div>
+    </div>
+    <div class="stat-card">
+      <h3>Total Investment</h3>
+      <div class="value">${{totalInvestment | number}}</div>
+    </div>
+  </div>
+
+  <div class="bots-list">
+    <div *ngIf="loading" class="loading">Loading bots...</div>
+    
+    <div *ngIf="!loading && bots.length === 0" class="empty-state">
+      <p>You haven't created any trading bots yet.</p>
+      <button class="btn-primary" (click)="createBot()">Get Started</button>
+    </div>
+
+    <div class="bot-card" *ngFor="let bot of bots">
+      <div class="bot-header">
+        <div class="bot-info">
+          <h3>{{bot.name}}</h3>
+          <span class="strategy-type">{{bot.strategyType}}</span>
+        </div>
+        <div class="status-badge" [ngClass]="bot.status">{{bot.status}}</div>
+      </div>
+
+      <div class="bot-details">
+        <div class="detail">
+          <label>Pair</label>
+          <span>{{bot.tradingPair}}</span>
+        </div>
+        <div class="detail">
+          <label>Investment</label>
+          <span>${{bot.investmentAmount}}</span>
+        </div>
+      </div>
+
+      <div class="bot-actions">
+        <button class="btn-icon" (click)="toggleStatus(bot)" [title]="bot.status === 'ACTIVE' ? 'Pause' : 'Start'">
+          <i class="fas" [ngClass]="bot.status === 'ACTIVE' ? 'fa-pause' : 'fa-play'"></i>
+          {{ bot.status === 'ACTIVE' ? 'Pause' : 'Start' }}
+        </button>
+        <button class="btn-icon" (click)="editBot(bot)" title="Edit">
+          Edit
+        </button>
+        <button class="btn-icon delete" (click)="deleteBot(bot)" title="Delete">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
